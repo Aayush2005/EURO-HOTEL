@@ -1,0 +1,120 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+@import "tailwindcss";
+
+:root {
+  /* EURO HOTEL Luxury Color Palette */
+  --deep-navy: #0B1D3A;
+  --gold-accent: #C9A227;
+  --off-white: #F8F6F3;
+  --charcoal-text: #2C2C2C;
+  --muted-beige: #F0EDE8;
+  --soft-gray: #D3D3D3;
+  
+  --background: var(--off-white);
+  --foreground: var(--charcoal-text);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-navy: var(--deep-navy);
+  --color-gold: var(--gold-accent);
+  --color-off-white: var(--off-white);
+  --color-charcoal: var(--charcoal-text);
+  --color-beige: var(--muted-beige);
+  --color-gray: var(--soft-gray);
+}
+
+body {
+  background: var(--off-white);
+  color: var(--charcoal-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Typography */
+.font-serif {
+  font-family: 'Playfair Display', serif;
+}
+
+.font-sans {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Premium Components */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.btn-gold {
+  background-color: #eab308;
+  color: #0B1D3A;
+  padding: 0.75rem 2rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.btn-gold:hover {
+  background-color: #ca8a04;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(234, 179, 8, 0.3);
+}
+
+.btn-outline-gold {
+  border: 2px solid #eab308;
+  color: #eab308;
+  background: transparent;
+  padding: 0.75rem 2rem;
+  border-radius: 0.375rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.btn-outline-gold:hover {
+  background-color: #eab308;
+  color: #0B1D3A;
+  transform: translateY(-1px);
+}
+
+.text-shadow {
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.bg-gradient-overlay {
+  background: linear-gradient(rgba(11, 29, 58, 0.6), rgba(11, 29, 58, 0.8));
+}
+
+/* Navbar Styles */
+.navbar-transparent {
+  background: transparent;
+  backdrop-filter: none;
+}
+
+.navbar-solid {
+  background: rgba(11, 29, 58, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(201, 162, 39, 0.2);
+}
+
+/* Premium Card Styles */
+.premium-card {
+  background: var(--off-white);
+  border: 1px solid var(--muted-beige);
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 20px rgba(11, 29, 58, 0.1);
+  transition: all 0.3s ease;
+}
+
+.premium-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 30px rgba(11, 29, 58, 0.15);
+}
