@@ -89,6 +89,14 @@ html {
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
+.text-shadow-lg {
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.drop-shadow-lg {
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+}
+
 .bg-gradient-overlay {
   background: linear-gradient(rgba(11, 29, 58, 0.6), rgba(11, 29, 58, 0.8));
 }
@@ -105,6 +113,34 @@ html {
   border-bottom: 1px solid rgba(201, 162, 39, 0.2);
 }
 
+/* Modal specific styles to override any backdrop issues */
+.auth-modal-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 99999 !important;
+  backdrop-filter: none !important;
+  isolation: isolate;
+}
+
+.auth-modal-backdrop {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 99998 !important;
+  background: rgba(11, 29, 58, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.auth-modal-content {
+  position: relative !important;
+  z-index: 99999 !important;
+}
+
 /* Premium Card Styles */
 .premium-card {
   background: var(--off-white);
@@ -117,4 +153,85 @@ html {
 .premium-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 30px rgba(11, 29, 58, 0.15);
+}
+
+/* Z-Index Layers */
+.z-modal-backdrop {
+  z-index: 99997;
+}
+
+.z-modal {
+  z-index: 99998;
+}
+
+.z-modal-auth {
+  z-index: 99999;
+}
+
+.z-loading {
+  z-index: 100001;
+}
+
+/* Ensure modals are always on top */
+.modal-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 99999 !important;
+}
+
+/* Loading Screen Styles */
+.loading-gradient {
+  background: linear-gradient(135deg, #0B1D3A 0%, #1a2f4a 50%, #0B1D3A 100%);
+}
+
+/* Smooth Animations */
+.animate-fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Prevent white flash during loading */
+html, body {
+  background-color: var(--deep-navy);
+  overflow-x: hidden;
+}
+
+/* Loading screen specific styles */
+.loading-backdrop {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+/* Sparkle animation */
+@keyframes sparkle {
+  0%, 100% { 
+    opacity: 0; 
+    transform: scale(0) rotate(0deg); 
+  }
+  50% { 
+    opacity: 1; 
+    transform: scale(1) rotate(180deg); 
+  }
+}
+
+.sparkle {
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+/* Circular progress glow */
+.progress-glow {
+  filter: drop-shadow(0 0 8px rgba(201, 162, 39, 0.6));
 }

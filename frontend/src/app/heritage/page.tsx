@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import HistoryCarousel from '@/components/HistoryCarousel';
+import SimplePageWrapper from '@/components/SimplePageWrapper';
 import Image from 'next/image';
 
 const HeritagePage = () => {
@@ -29,8 +30,9 @@ const HeritagePage = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-off-white">
-      <Header />
+    <SimplePageWrapper>
+      <div className="min-h-screen bg-off-white">
+        <Header />
       
       {/* Hero Section */}
       <section className="relative h-[600px] flex items-center justify-center">
@@ -178,7 +180,8 @@ const HeritagePage = () => {
       </section>
 
       <Footer />
-    </div>
+      </div>
+    </SimplePageWrapper>
   );
 };
 

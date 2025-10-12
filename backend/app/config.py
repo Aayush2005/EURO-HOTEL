@@ -7,12 +7,12 @@ load_dotenv()
 
 class Settings(BaseSettings):
     # Database
-    mongodb_uri: str = os.getenv("MONGODB_URI", "mongodb://localhost:27017/euro_hotel")
+    mongodb_uri: str = os.getenv("MONGODB_URI")
     database_name: str = "euro_hotel"
     
     # JWT
-    jwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "your-super-secret-jwt-key-change-this")
-    jwt_refresh_secret_key: str = os.getenv("JWT_REFRESH_SECRET_KEY", "your-refresh-secret-key-change-this")
+    jwt_secret_key: str = os.getenv("JWT_SECRET_KEY")
+    jwt_refresh_secret_key: str = os.getenv("JWT_REFRESH_SECRET_KEY")
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
     refresh_token_expire_days: int = 7

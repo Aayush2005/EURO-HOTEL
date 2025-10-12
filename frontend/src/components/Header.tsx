@@ -52,37 +52,40 @@ const Header = () => {
     <motion.header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled ? 'navbar-solid' : 'navbar-transparent'
-      }`}
+      } ${isAuthModalOpen ? 'z-40' : ''}`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
+      style={{ zIndex: isAuthModalOpen ? 40 : 50 }}
     >
       <nav className="container mx-auto px-6 py-2 flex items-center justify-between">
         {/* Logo */}
-        <motion.div
-          className="flex items-center cursor-pointer"
-          whileHover={{ scale: 1 }}
-          transition={{ duration: 0.2 }}
-        >
-          <div className="relative w-18 h-18 mr-1">
-            <Image
-              src="/logoVector.png"
-              alt="Euro Hotel Logo"
-              fill
-              className="object-contain"
-              priority
-            />
-          </div>
-          <div className='relative w-24 h-14 mr-3 mt-[15px]'>
-            <Image
-              src="/logoText.png"
-              alt='EURO LOGO'
-              fill
-              className="object-contain"
-              priority
+        <Link href="/">
+          <motion.div
+            className="flex items-center cursor-pointer"
+            whileHover={{ scale: 1 }}
+            transition={{ duration: 0.2 }}
+          >
+            <div className="relative w-18 h-18 mr-1">
+              <Image
+                src="/logoVector.png"
+                alt="Euro Hotel Logo"
+                fill
+                className="object-contain"
+                priority
               />
-          </div>
-        </motion.div>
+            </div>
+            <div className='relative w-24 h-14 mr-3 mt-[15px]'>
+              <Image
+                src="/logoText.png"
+                alt='EURO LOGO'
+                fill
+                className="object-contain"
+                priority
+                />
+            </div>
+          </motion.div>
+        </Link>
 
         {/* Navigation Links - Desktop */}
         <div className="hidden md:flex items-center space-x-8">

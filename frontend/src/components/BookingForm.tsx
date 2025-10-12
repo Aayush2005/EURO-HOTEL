@@ -20,7 +20,7 @@ const BookingFormContent = () => {
   // Handle room pre-selection from URL
   useEffect(() => {
     const roomParam = searchParams.get('room');
-    if (roomParam && ['deluxe', 'royal', 'executive', 'presidential'].includes(roomParam)) {
+    if (roomParam && ['standard', 'deluxe', 'suite', 'presidential'].includes(roomParam)) {
       setFormData(prev => ({ ...prev, roomType: roomParam }));
     }
     
@@ -45,10 +45,10 @@ const BookingFormContent = () => {
     try {
       // Calculate total amount (simplified pricing)
       const roomPrices: { [key: string]: number } = {
-        deluxe: 15000,
-        royal: 25000,
-        executive: 20000,
-        presidential: 50000,
+        standard: 8500,
+        deluxe: 12500,
+        suite: 18500,
+        presidential: 35000,
       };
 
       const checkInDate = new Date(formData.checkIn);
@@ -67,17 +67,27 @@ const BookingFormContent = () => {
       });
 
       // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
-
-      setMessage(`Booking request submitted successfully! Total: ₹${totalAmount.toLocaleString()} for ${nights} night(s). We will contact you shortly.`);
+      // Redirect to rooms page with filters
+      const roomTypeMap: { [key: string]: string } = {
+        standard: 'standard',
+        deluxe: 'deluxe', 
+        suite: 'suite',
+        presidential: 'presidential'
+      };
       
-      // Reset form
-      setFormData({
-        checkIn: '',
-        checkOut: '',
-        guests: '2',
-        roomType: 'deluxe'
+      const params = new URLSearchParams({
+        start_date: formData.checkIn,
+        end_date: formData.checkOut,
+        guests: formData.guests,
+        room_type: roomTypeMap[formData.roomType] || ''
       });
+      
+      setMessage('Redirecting to available rooms...');
+      
+      // Redirect to rooms page
+      setTimeout(() => {
+        window.location.href = `/rooms?${params.toString()}`;
+      }, 1000);
     } catch (err: unknown) {
       setMessage(err instanceof Error ? err.message : 'An error occurred while processing your booking.');
     } finally {
@@ -199,10 +209,10 @@ const BookingFormContent = () => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gold-500 transition-colors"
                   >
-                    <option value="deluxe">Heritage Deluxe Suite - ₹15,000/night</option>
-                    <option value="royal">Royal Nizami Suite - ₹25,000/night</option>
-                    <option value="executive">Executive Palace Suite - ₹20,000/night</option>
-                    <option value="presidential">Presidential Suite - ₹50,000/night</option>
+                    <option value="standard">Standard Heritage Room - ₹8,500/night</option>
+                    <option value="deluxe">Deluxe Heritage Room - ₹12,500/night</option>
+                    <option value="suite">Heritage Suite - ₹18,500/night</option>
+                    <option value="presidential">Presidential Suite - ₹35,000/night</option>
                   </select>
                 </div>
               </div>

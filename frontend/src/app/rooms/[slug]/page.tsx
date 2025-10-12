@@ -11,7 +11,8 @@ import {
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import BookingModal from '@/components/booking/BookingModal';
-import { toast } from 'react-hot-toast';
+import SimplePageWrapper from '@/components/SimplePageWrapper';
+
 
 interface RoomImage {
   url: string;
@@ -37,41 +38,178 @@ interface Room {
   cancellation_policy: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
+const STATIC_ROOMS: Room[] = [
+  {
+    id: "1",
+    slug: "deluxe-heritage-suite",
+    title: "Deluxe Heritage Suite",
+    description: "Experience the grandeur of Hyderabadi royalty in our spacious Deluxe Heritage Suite. Featuring traditional décor with modern amenities, this suite offers a perfect blend of luxury and comfort.",
+    room_type: "suite",
+    amenities: [
+      "Free Wi-Fi", "Air Conditioning", "Mini Bar", "Room Service", 
+      "Flat Screen TV", "Private Bathroom", "Balcony with City View", 
+      "Coffee/Tea Maker", "Safe", "Telephone"
+    ],
+    images: [],
+    base_price: 8500,
+    max_occupancy: 4,
+    bed_configuration: "1 King Bed + 1 Sofa Bed",
+    room_size: "45 sqm",
+    floor: "3rd Floor",
+    view: "City View",
+    cancellation_policy: "free_24h"
+  },
+  {
+    id: "2",
+    slug: "royal-presidential-suite",
+    title: "Royal Presidential Suite",
+    description: "The epitome of luxury, our Royal Presidential Suite offers unparalleled elegance and space. Perfect for special occasions and VIP guests seeking the ultimate in comfort and prestige.",
+    room_type: "presidential",
+    amenities: [
+      "Free Wi-Fi", "Air Conditioning", "Mini Bar", "24/7 Room Service", 
+      "Smart TV", "Marble Bathroom", "Private Terrace", "Espresso Machine", 
+      "Personal Safe", "Telephone", "Butler Service", "Jacuzzi"
+    ],
+    images: [],
+    base_price: 15000,
+    max_occupancy: 6,
+    bed_configuration: "1 King Bed + 2 Single Beds",
+    room_size: "80 sqm",
+    floor: "Top Floor",
+    view: "Panoramic City View",
+    cancellation_policy: "flexible"
+  },
+  {
+    id: "3",
+    slug: "classic-deluxe-room",
+    title: "Classic Deluxe Room",
+    description: "Our Classic Deluxe Room combines traditional Hyderabadi hospitality with contemporary comfort. Ideal for business travelers and couples seeking a refined stay experience.",
+    room_type: "deluxe",
+    amenities: [
+      "Free Wi-Fi", "Air Conditioning", "Mini Fridge", "Room Service", 
+      "LED TV", "Private Bathroom", "Work Desk", "Coffee/Tea Maker", 
+      "Safe", "Telephone"
+    ],
+    images: [],
+    base_price: 5500,
+    max_occupancy: 3,
+    bed_configuration: "1 Queen Bed",
+    room_size: "30 sqm",
+    floor: "2nd Floor",
+    view: "Garden View",
+    cancellation_policy: "free_24h"
+  },
+  {
+    id: "4",
+    slug: "standard-comfort-room",
+    title: "Standard Comfort Room",
+    description: "Perfect for budget-conscious travelers, our Standard Comfort Room offers all essential amenities with the signature Euro Hotel hospitality and service excellence.",
+    room_type: "standard",
+    amenities: [
+      "Free Wi-Fi", "Air Conditioning", "Room Service", "TV", 
+      "Private Bathroom", "Work Desk", "Coffee/Tea Maker", "Telephone"
+    ],
+    images: [],
+    base_price: 3500,
+    max_occupancy: 2,
+    bed_configuration: "1 Double Bed",
+    room_size: "25 sqm",
+    floor: "1st Floor",
+    view: "Street View",
+    cancellation_policy: "free_24h"
+  }
+];
+
+
+const getRoomImages = (roomType: string) => {
+  const imageMap: { [key: string]: string[] } = {
+    'standard': [
+      'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop'
+    ],
+    'deluxe': [
+      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1595576508898-0ad5c879a061?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop'
+    ],
+    'suite': [
+      'https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1595576508898-0ad5c879a061?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop'
+    ],
+    'presidential': [
+      'https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1595576508898-0ad5c879a061?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop',
+      'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800&h=600&fit=crop'
+    ]
+  };
+
+  const urls = imageMap[roomType] || imageMap['standard'];
+  return urls.map((url, index) => ({
+    url,
+    alt: `${roomType} room view ${index + 1}`,
+    is_primary: index === 0,
+    order: index + 1
+  }));
+};
 
 export default function RoomDetailsPage() {
   const params = useParams();
   const slug = params.slug as string;
   
   const [room, setRoom] = useState<Room | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    fetchRoomDetails();
+    const foundRoom = STATIC_ROOMS.find(r => r.slug === slug);
+    if (foundRoom) {
+      foundRoom.images = getRoomImages(foundRoom.room_type);
+      setRoom(foundRoom);
+    }
   }, [slug]);
 
-  const fetchRoomDetails = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/rooms/${slug}`, {
-        credentials: 'include'
+
+  useEffect(() => {
+    if (!room || !isAutoPlaying || room.images.length <= 1) return;
+
+    const interval = setInterval(() => {
+      setProgress((prev) => {
+        if (prev >= 100) {
+          setSelectedImageIndex((current) => 
+            current === room.images.length - 1 ? 0 : current + 1
+          );
+          return 0;
+        }
+        return prev + 2;
       });
-      
-      if (!response.ok) {
-        throw new Error('Room not found');
-      }
-      
-      const roomData = await response.json();
-      setRoom(roomData);
-    } catch (error) {
-      console.error('Error fetching room:', error);
-      toast.error('Failed to load room details');
-    } finally {
-      setLoading(false);
-    }
-  };
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [room, isAutoPlaying, selectedImageIndex]);
+
+
+  useEffect(() => {
+    setProgress(0);
+  }, [selectedImageIndex]);
+
+
 
   const getAmenityIcon = (amenity: string) => {
     const amenityLower = amenity.toLowerCase();
@@ -99,18 +237,28 @@ export default function RoomDetailsPage() {
 
   const nextImage = () => {
     if (room) {
+      setIsAutoPlaying(false);
       setSelectedImageIndex((prev) => 
         prev === room.images.length - 1 ? 0 : prev + 1
       );
+      setTimeout(() => setIsAutoPlaying(true), 5000);
     }
   };
 
   const prevImage = () => {
     if (room) {
+      setIsAutoPlaying(false);
       setSelectedImageIndex((prev) => 
         prev === 0 ? room.images.length - 1 : prev - 1
       );
+      setTimeout(() => setIsAutoPlaying(true), 5000);
     }
+  };
+
+  const goToImage = (index: number) => {
+    setIsAutoPlaying(false);
+    setSelectedImageIndex(index);
+    setTimeout(() => setIsAutoPlaying(true), 5000);
   };
 
   if (loading) {
@@ -164,8 +312,9 @@ export default function RoomDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-off-white">
-      <Header />
+    <SimplePageWrapper>
+      <div className="min-h-screen bg-off-white">
+        <Header />
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
@@ -221,19 +370,39 @@ export default function RoomDetailsPage() {
                 <span>View All Photos ({room.images.length})</span>
               </button>
               
-              {/* Image Indicators */}
+              {/* Progress Indicators */}
               {room.images.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
                   {room.images.map((_, index) => (
                     <button
                       key={index}
-                      onClick={() => setSelectedImageIndex(index)}
-                      className={`w-2 h-2 rounded-full transition-all ${
-                        index === selectedImageIndex ? 'bg-white' : 'bg-white bg-opacity-50'
-                      }`}
-                    />
+                      onClick={() => goToImage(index)}
+                      className="relative w-12 h-1 bg-white bg-opacity-30 rounded-full overflow-hidden"
+                    >
+                      <div 
+                        className={`absolute left-0 top-0 h-full bg-gold-400 rounded-full transition-all duration-100 ${
+                          index === selectedImageIndex ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        style={{ 
+                          width: index === selectedImageIndex ? `${progress}%` : '0%'
+                        }}
+                      />
+                      {index !== selectedImageIndex && (
+                        <div className="absolute inset-0 bg-white bg-opacity-50 rounded-full" />
+                      )}
+                    </button>
                   ))}
                 </div>
+              )}
+              
+              {/* Auto-play control */}
+              {room.images.length > 1 && (
+                <button
+                  onClick={() => setIsAutoPlaying(!isAutoPlaying)}
+                  className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg hover:bg-opacity-70 transition-all text-sm"
+                >
+                  {isAutoPlaying ? 'Pause' : 'Play'}
+                </button>
               )}
             </div>
           </motion.div>
@@ -421,6 +590,7 @@ export default function RoomDetailsPage() {
         onClose={() => setIsBookingModalOpen(false)}
         room={room}
       />
-    </div>
+      </div>
+    </SimplePageWrapper>
   );
 }

@@ -41,11 +41,11 @@ app = FastAPI(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Security middleware
-app.add_middleware(
-    TrustedHostMiddleware, 
-    allowed_hosts=["localhost", "127.0.0.1", "*.vercel.app"]
-)
+# Security middleware - disabled for development
+# app.add_middleware(
+#     TrustedHostMiddleware, 
+#     allowed_hosts=["localhost", "127.0.0.1", "*.vercel.app"]
+# )
 
 # Configure CORS
 app.add_middleware(

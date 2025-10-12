@@ -52,7 +52,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
   const [checkInDate, setCheckInDate] = useState('');
   const [checkOutDate, setCheckOutDate] = useState('');
   const [guests, setGuests] = useState(1);
-  const [promoCode, setPromoCode] = useState('');
+  const [rooms, setRooms] = useState(1);
+
   const [pricing, setPricing] = useState<PricingBreakdown | null>(null);
   
   // Step 2: Guest Details
@@ -94,7 +95,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
     setCheckInDate('');
     setCheckOutDate('');
     setGuests(1);
-    setPromoCode('');
+    setRooms(1);
+
     setPricing(null);
     setGuestDetails({
       name: user?.username || '',
@@ -135,7 +137,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
           start_date: checkInDate,
           end_date: checkOutDate,
           guests: guests,
-          promo_code: promoCode || null
+          rooms: rooms,
+          promo_code: null
         })
       });
 
@@ -181,9 +184,10 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
           start_date: checkInDate,
           end_date: checkOutDate,
           guests: guests,
+          rooms: rooms,
           guest_details: guestDetails,
           special_requests: specialRequests || null,
-          promo_code: promoCode || null,
+          promo_code: null,
           idempotency_key: idempotencyKey
         })
       });
@@ -280,10 +284,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[9998] flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          style={{ zIndex: 9998 }}
         >
           {/* Backdrop */}
           <motion.div
@@ -292,6 +297,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
+            style={{ zIndex: 9997 }}
           />
 
           {/* Modal */}
@@ -302,6 +308,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
             animate="visible"
             exit="exit"
             transition={{ duration: 0.3 }}
+            style={{ zIndex: 9999 }}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-muted-beige">
@@ -309,22 +316,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
                 <h2 className="text-2xl font-serif font-semibold text-navy-900">
                   Book {room.title}
                 </h2>
-                <div className="flex items-center space-x-4 mt-2">
-                  {[1, 2, 3].map((stepNum) => (
-                    <div key={stepNum} className="flex items-center">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                        step >= stepNum ? 'bg-gold-600 text-navy-900' : 'bg-muted-beige text-charcoal-600'
-                      }`}>
-                        {stepNum}
-                      </div>
-                      {stepNum < 3 && (
-                        <div className={`w-8 h-0.5 ${
-                          step > stepNum ? 'bg-gold-600' : 'bg-muted-beige'
-                        }`} />
-                      )}
-                    </div>
-                  ))}
-                </div>
               </div>
               
               {holdExpiresAt && timeRemaining > 0 && (
@@ -385,54 +376,91 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                      Number of Guests
-                    </label>
-                    <div className="flex items-center space-x-4">
-                      <button
-                        type="button"
-                        onClick={() => setGuests(Math.max(1, guests - 1))}
-                        className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"
-                      >
-                        <Minus size={16} />
-                      </button>
-                      <div className="flex items-center space-x-2">
-                        <Users size={18} className="text-charcoal-600" />
-                        <span className="text-lg font-medium">{guests}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-charcoal-700 mb-2">
+                        Number of Guests
+                      </label>
+                      <div className="flex items-center space-x-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newGuests = Math.max(1, guests - 1);
+                            setGuests(newGuests);
+                            // Auto-adjust rooms based on guests
+                            const requiredRooms = Math.ceil(newGuests / room.max_occupancy);
+                            setRooms(Math.max(1, requiredRooms));
+                          }}
+                          className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <div className="flex items-center space-x-2">
+                          <Users size={18} className="text-charcoal-600" />
+                          <span className="text-lg font-medium">{guests}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newGuests = guests + 1;
+                            setGuests(newGuests);
+                            // Auto-adjust rooms based on guests
+                            const requiredRooms = Math.ceil(newGuests / room.max_occupancy);
+                            setRooms(Math.max(1, requiredRooms));
+                          }}
+                          className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"
+                        >
+                          <Plus size={16} />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => setGuests(Math.min(room.max_occupancy, guests + 1))}
-                        className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"
-                      >
-                        <Plus size={16} />
-                      </button>
-                      <span className="text-sm text-charcoal-600">
-                        (Max {room.max_occupancy})
-                      </span>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-charcoal-700 mb-2">
+                        Number of Rooms
+                      </label>
+                      <div className="flex items-center space-x-4">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newRooms = Math.max(1, rooms - 1);
+                            setRooms(newRooms);
+                            // Adjust guests if rooms can't accommodate current guest count
+                            const maxGuestsForRooms = newRooms * room.max_occupancy;
+                            if (guests > maxGuestsForRooms) {
+                              setGuests(maxGuestsForRooms);
+                            }
+                          }}
+                          className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"
+                        >
+                          <Minus size={16} />
+                        </button>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-lg font-medium">{rooms}</span>
+                          <span className="text-sm text-charcoal-600">Room{rooms > 1 ? 's' : ''}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setRooms(rooms + 1)}
+                          className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"
+                        >
+                          <Plus size={16} />
+                        </button>
+                      </div>
+                      <div className="text-xs text-charcoal-500 mt-1">
+                        Max {room.max_occupancy} guests per room
+                      </div>
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                      Promo Code (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      value={promoCode}
-                      onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
-                      className="w-full px-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                      placeholder="Enter promo code"
-                    />
-                  </div>
+
 
                   {pricing && (
                     <div className="bg-muted-beige p-4 rounded-lg">
                       <h4 className="font-semibold text-navy-900 mb-3">Price Breakdown</h4>
                       <div className="space-y-2 text-sm">
                         <div className="flex justify-between">
-                          <span>Room ({pricing.nights} nights)</span>
+                          <span>{rooms} Room{rooms > 1 ? 's' : ''} ({pricing.nights} nights)</span>
                           <span>₹{pricing.subtotal.toLocaleString()}</span>
                         </div>
                         <div className="flex justify-between">
@@ -475,7 +503,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
                     <div className="text-sm space-y-1">
                       <div>Check-in: {new Date(checkInDate).toLocaleDateString()}</div>
                       <div>Check-out: {new Date(checkOutDate).toLocaleDateString()}</div>
-                      <div>Guests: {guests}</div>
+                      <div>Guests: {guests} | Rooms: {rooms}</div>
                       <div className="font-semibold">Total: ₹{pricing.total_amount.toLocaleString()}</div>
                     </div>
                   </div>

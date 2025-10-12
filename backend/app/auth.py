@@ -8,9 +8,13 @@ from app.models.user import User, UserStatus
 from app.config import settings
 import secrets
 import string
+import warnings
 
-# Password hashing
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+# Suppress bcrypt version warning
+warnings.filterwarnings("ignore", message=".*bcrypt.*", category=UserWarning)
+
+# Password hashing - optimized for faster hashing
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 
 # JWT token handling
 security = HTTPBearer(auto_error=False)

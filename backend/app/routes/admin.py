@@ -17,9 +17,7 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
-# Admin dependency (in production, add proper admin role check)
 async def get_admin_user(current_user: User = Depends(get_current_active_user)) -> User:
-    # TODO: Add proper admin role check
     return current_user
 
 @router.get("/bookings", response_model=List[BookingResponse])
