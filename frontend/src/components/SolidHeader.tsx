@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { User, LogOut } from 'lucide-react';
@@ -10,63 +10,40 @@ import AuthModal from '@/components/auth/AuthModal';
 import ProfileModal from '@/components/auth/ProfileModal';
 import { useClickOutside } from '@/hooks/useClickOutside';
 
-const Header = () => {
+const SolidHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showUserMenu, setShowUserMenu] = useState(false);
-  
+
   const { user, isAuthenticated, logout } = useAuth();
-  
   const userMenuRef = useClickOutside(() => setShowUserMenu(false));
-
-  useEffect(() => {
-    const handleScroll = () => {
-      const scrollTop = window.scrollY;
-      setIsScrolled(scrollTop > 100);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   const menuVariants = {
     closed: {
       opacity: 0,
       height: 0,
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut"
-      }
+      transition: { duration: 0.3, ease: 'easeInOut' }
     },
     open: {
       opacity: 1,
-      height: "auto",
-      transition: {
-        duration: 0.3,
-        ease: "easeInOut"
-      }
+      height: 'auto',
+      transition: { duration: 0.3, ease: 'easeInOut' }
     }
   };
 
   const menuItemVariants = {
     closed: { opacity: 0, x: -20 },
-    open: () => ({
-      opacity: 1,
-      x: 0,
-    })
+    open: { opacity: 1, x: 0 }
   };
 
   return (
     <motion.header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        isScrolled ? 'navbar-solid' : 'navbar-transparent'
-      } ${isAuthModalOpen ? 'z-40' : ''}`}
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 navbar-solid ${isAuthModalOpen ? 'z-40' : ''}`}
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      transition={{ duration: 0.6, ease: "easeOut" }}
+      transition={{ duration: 0.6, ease: 'easeOut' }}
       style={{ zIndex: isAuthModalOpen ? 40 : 50 }}
     >
       <nav className="container mx-auto px-6 py-2 flex items-center justify-between">
@@ -86,14 +63,14 @@ const Header = () => {
                 priority
               />
             </div>
-            <div className='relative w-24 h-14 mr-3 mt-[15px]'>
+            <div className="relative w-24 h-14 mr-3 mt-[15px]">
               <Image
                 src="/logoText.png"
-                alt='EURO LOGO'
+                alt="EURO LOGO"
                 fill
                 className="object-contain"
                 priority
-                />
+              />
             </div>
           </motion.div>
         </Link>
@@ -107,7 +84,7 @@ const Header = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
             >
-              <Link 
+              <Link
                 href={item === 'HOME' ? '/' : `/${item.toLowerCase()}`}
                 className="text-white hover:text-yellow-400 transition-all duration-300 font-medium tracking-wide relative group"
               >
@@ -120,30 +97,16 @@ const Header = () => {
 
         {/* Action Section - Desktop */}
         <div className="hidden md:flex items-center space-x-4">
-          <Link href="/contact">
-            <motion.button
-              className="text-white hover:text-yellow-400 transition-colors font-medium hidden"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-            >
-              Contact Us
-            </motion.button>
-          </Link>
-          
           {isAuthenticated ? (
             <div className="relative" ref={userMenuRef}>
               <motion.button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center space-x-2 text-white hover:text-yellow-400 transition-colors font-medium"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
               >
                 <User size={18} />
                 <span>{user?.username}</span>
               </motion.button>
-              
+
               <AnimatePresence>
                 {showUserMenu && (
                   <motion.div
@@ -184,14 +147,11 @@ const Header = () => {
                 setIsAuthModalOpen(true);
               }}
               className="text-white hover:text-yellow-400 transition-colors font-medium"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
             >
               Sign In
             </motion.button>
           )}
-          
+
           <Link href="/rooms">
             <motion.button
               className="btn-gold"
@@ -207,20 +167,17 @@ const Header = () => {
         </div>
 
         {/* Mobile Menu Button */}
-        <motion.button 
+        <motion.button
           className="md:hidden text-white p-2 relative z-10"
           onClick={() => setIsMenuOpen(!isMenuOpen)}
           whileTap={{ scale: 0.9 }}
         >
-          <motion.div
-            animate={isMenuOpen ? "open" : "closed"}
-            className="w-6 h-6 relative"
-          >
+          <motion.div animate={isMenuOpen ? 'open' : 'closed'} className="w-6 h-6 relative">
             <motion.span
               className="absolute top-0 left-0 w-full h-0.5 bg-current origin-center"
               variants={{
                 closed: { rotate: 0, y: 0 },
-                open: { rotate: 45, y: 11 }
+                open: { rotate: 45, y: 11 },
               }}
               transition={{ duration: 0.3 }}
             />
@@ -228,7 +185,7 @@ const Header = () => {
               className="absolute top-2.5 left-0 w-full h-0.5 bg-current"
               variants={{
                 closed: { opacity: 1 },
-                open: { opacity: 0 }
+                open: { opacity: 0 },
               }}
               transition={{ duration: 0.3 }}
             />
@@ -236,7 +193,7 @@ const Header = () => {
               className="absolute top-5 left-0 w-full h-0.5 bg-current origin-center"
               variants={{
                 closed: { rotate: 0, y: 0 },
-                open: { rotate: -45, y: -11 }
+                open: { rotate: -45, y: -11 },
               }}
               transition={{ duration: 0.3 }}
             />
@@ -264,7 +221,7 @@ const Header = () => {
                   animate="open"
                   exit="closed"
                 >
-                  <Link 
+                  <Link
                     href={item === 'HOME' ? '/' : `/${item.toLowerCase()}`}
                     className="block text-white hover:text-yellow-400 transition-colors py-3 font-medium tracking-wide"
                     onClick={() => setIsMenuOpen(false)}
@@ -273,23 +230,7 @@ const Header = () => {
                   </Link>
                 </motion.div>
               ))}
-              
-              <motion.div
-                custom={4}
-                variants={menuItemVariants}
-                initial="closed"
-                animate="open"
-                exit="closed"
-              >
-                <Link 
-                  href="/contact"
-                  className="block text-white hover:text-yellow-400 transition-colors py-3 font-medium tracking-wide"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  CONTACT US
-                </Link>
-              </motion.div>
-              
+
               {!isAuthenticated && (
                 <motion.div
                   custom={5}
@@ -310,7 +251,7 @@ const Header = () => {
                   </button>
                 </motion.div>
               )}
-              
+
               {isAuthenticated && (
                 <>
                   <motion.div
@@ -330,7 +271,7 @@ const Header = () => {
                       PROFILE ({user?.username})
                     </button>
                   </motion.div>
-                  
+
                   <motion.div
                     custom={6}
                     variants={menuItemVariants}
@@ -350,7 +291,7 @@ const Header = () => {
                   </motion.div>
                 </>
               )}
-              
+
               <Link href="/rooms">
                 <motion.button
                   onClick={() => setIsMenuOpen(false)}
@@ -387,4 +328,4 @@ const Header = () => {
   );
 };
 
-export default Header;
+export default SolidHeader;

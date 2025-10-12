@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
@@ -8,10 +8,13 @@ import {
   Bed, Eye, X, ChevronLeft, ChevronRight, MapPin,
   Clock, Shield, Star, CheckCircle
 } from 'lucide-react';
-import Header from '@/components/Header';
+import SolidHeader from '@/components/SolidHeader';
 import Footer from '@/components/Footer';
 import BookingModal from '@/components/booking/BookingModal';
 import SimplePageWrapper from '@/components/SimplePageWrapper';
+import LazyImage from '@/components/LazyImage';
+import OrbitalLoader from '@/components/OrbitalLoader';
+import { getCloudinaryUrl, roomImages } from '@/lib/cloudinary';
 
 
 interface RoomImage {
@@ -123,42 +126,9 @@ const STATIC_ROOMS: Room[] = [
 
 
 const getRoomImages = (roomType: string) => {
-  const imageMap: { [key: string]: string[] } = {
-    'standard': [
-      'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop'
-    ],
-    'deluxe': [
-      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1595576508898-0ad5c879a061?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop'
-    ],
-    'suite': [
-      'https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1595576508898-0ad5c879a061?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop'
-    ],
-    'presidential': [
-      'https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1590490360182-c33d57733427?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1595576508898-0ad5c879a061?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&h=600&fit=crop',
-      'https://images.unsplash.com/photo-1564501049412-61c2a3083791?w=800&h=600&fit=crop'
-    ]
-  };
-
-  const urls = imageMap[roomType] || imageMap['standard'];
-  return urls.map((url, index) => ({
-    url,
+  const imageIds = roomImages[roomType as keyof typeof roomImages] || roomImages.standard;
+  return imageIds.map((publicId, index) => ({
+    publicId,
     alt: `${roomType} room view ${index + 1}`,
     is_primary: index === 0,
     order: index + 1
@@ -189,19 +159,35 @@ export default function RoomDetailsPage() {
   useEffect(() => {
     if (!room || !isAutoPlaying || room.images.length <= 1) return;
 
-    const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          setSelectedImageIndex((current) => 
-            current === room.images.length - 1 ? 0 : current + 1
-          );
-          return 0;
-        }
-        return prev + 2;
-      });
-    }, 100);
+    // Use a single timeout for the full duration instead of frequent updates
+    const timeout = setTimeout(() => {
+      setSelectedImageIndex((current) => 
+        current === room.images.length - 1 ? 0 : current + 1
+      );
+    }, 5000);
 
-    return () => clearInterval(interval);
+    // Update progress smoothly with requestAnimationFrame
+    let animationFrame: number;
+    const startTime = Date.now();
+    
+    const updateProgress = () => {
+      const elapsed = Date.now() - startTime;
+      const newProgress = Math.min((elapsed / 5000) * 100, 100);
+      setProgress(newProgress);
+      
+      if (newProgress < 100 && isAutoPlaying) {
+        animationFrame = requestAnimationFrame(updateProgress);
+      }
+    };
+    
+    animationFrame = requestAnimationFrame(updateProgress);
+
+    return () => {
+      clearTimeout(timeout);
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
   }, [room, isAutoPlaying, selectedImageIndex]);
 
 
@@ -235,7 +221,7 @@ export default function RoomDetailsPage() {
     }
   };
 
-  const nextImage = () => {
+  const nextImage = useCallback(() => {
     if (room) {
       setIsAutoPlaying(false);
       setSelectedImageIndex((prev) => 
@@ -243,9 +229,9 @@ export default function RoomDetailsPage() {
       );
       setTimeout(() => setIsAutoPlaying(true), 5000);
     }
-  };
+  }, [room]);
 
-  const prevImage = () => {
+  const prevImage = useCallback(() => {
     if (room) {
       setIsAutoPlaying(false);
       setSelectedImageIndex((prev) => 
@@ -253,43 +239,48 @@ export default function RoomDetailsPage() {
       );
       setTimeout(() => setIsAutoPlaying(true), 5000);
     }
-  };
+  }, [room]);
 
-  const goToImage = (index: number) => {
+  const goToImage = useCallback((index: number) => {
     setIsAutoPlaying(false);
     setSelectedImageIndex(index);
     setTimeout(() => setIsAutoPlaying(true), 5000);
-  };
+  }, []);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-off-white">
-        <Header />
-        <div className="pt-24 pb-16">
-          <div className="container mx-auto px-6">
-            <div className="animate-pulse">
-              <div className="h-96 bg-muted-beige rounded-lg mb-8"></div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2">
-                  <div className="h-8 bg-muted-beige rounded mb-4"></div>
-                  <div className="h-4 bg-muted-beige rounded mb-2"></div>
-                  <div className="h-4 bg-muted-beige rounded mb-2"></div>
-                  <div className="h-4 bg-muted-beige rounded w-3/4"></div>
+      <>
+        <OrbitalLoader overlay />
+        <div className="min-h-screen bg-off-white">
+          <SolidHeader />
+          <div className="pt-24 pb-16">
+            <div className="container mx-auto px-6">
+              <div className="animate-pulse">
+                <div className="h-96 bg-gradient-to-r from-muted-beige via-soft-gray to-muted-beige rounded-lg mb-8">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer"></div>
                 </div>
-                <div className="h-64 bg-muted-beige rounded"></div>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <div className="lg:col-span-2 space-y-4">
+                    <div className="h-8 bg-muted-beige rounded mb-4"></div>
+                    <div className="h-4 bg-muted-beige rounded mb-2"></div>
+                    <div className="h-4 bg-muted-beige rounded mb-2"></div>
+                    <div className="h-4 bg-muted-beige rounded w-3/4"></div>
+                  </div>
+                  <div className="h-64 bg-muted-beige rounded"></div>
+                </div>
               </div>
             </div>
           </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </>
     );
   }
 
   if (!room) {
     return (
       <div className="min-h-screen bg-off-white">
-        <Header />
+        <SolidHeader />
         <div className="pt-24 pb-16">
           <div className="container mx-auto px-6 text-center">
             <h1 className="text-4xl font-serif font-bold text-navy-900 mb-4">
@@ -314,7 +305,7 @@ export default function RoomDetailsPage() {
   return (
     <SimplePageWrapper>
       <div className="min-h-screen bg-off-white">
-        <Header />
+        <SolidHeader />
       
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6">
@@ -337,10 +328,14 @@ export default function RoomDetailsPage() {
             transition={{ duration: 0.6 }}
           >
             <div className="relative h-96 md:h-[500px]">
-              <img
-                src={room.images[selectedImageIndex]?.url || '/images/rooms/placeholder.jpg'}
+              <LazyImage
+                key={selectedImageIndex}
+                publicId={room.images[selectedImageIndex]?.publicId || roomImages.standard[0]}
                 alt={room.images[selectedImageIndex]?.alt || room.title}
+                width={1200}
+                height={500}
                 className="w-full h-full object-cover"
+                priority
               />
               
               {/* Image Navigation */}
@@ -380,11 +375,12 @@ export default function RoomDetailsPage() {
                       className="relative w-12 h-1 bg-white bg-opacity-30 rounded-full overflow-hidden"
                     >
                       <div 
-                        className={`absolute left-0 top-0 h-full bg-gold-400 rounded-full transition-all duration-100 ${
+                        className={`absolute left-0 top-0 h-full bg-gold-400 rounded-full transition-all duration-300 ${
                           index === selectedImageIndex ? 'opacity-100' : 'opacity-0'
                         }`}
                         style={{ 
-                          width: index === selectedImageIndex ? `${progress}%` : '0%'
+                          width: index === selectedImageIndex ? `${Math.round(progress)}%` : '0%',
+                          willChange: index === selectedImageIndex ? 'width' : 'auto'
                         }}
                       />
                       {index !== selectedImageIndex && (
@@ -553,10 +549,13 @@ export default function RoomDetailsPage() {
             </button>
             
             <div className="relative">
-              <img
-                src={room.images[selectedImageIndex]?.url || '/images/rooms/placeholder.jpg'}
+              <LazyImage
+                publicId={room.images[selectedImageIndex]?.publicId || roomImages.standard[0]}
                 alt={room.images[selectedImageIndex]?.alt || room.title}
+                width={1200}
+                height={800}
                 className="max-w-full max-h-[80vh] object-contain"
+                priority
               />
               
               {room.images.length > 1 && (

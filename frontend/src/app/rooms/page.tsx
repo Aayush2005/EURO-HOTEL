@@ -7,6 +7,12 @@ import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SimplePageWrapper from '@/components/SimplePageWrapper';
+import LazyImage from '@/components/LazyImage';
+import OrbitalLoader from '@/components/OrbitalLoader';
+import RoomCardSkeleton from '@/components/skeletons/RoomCardSkeleton';
+import RoomCard from '@/components/RoomCard';
+import { useProgressiveLoading } from '@/hooks/useInfiniteScroll';
+import { getCloudinaryUrl, roomImages, heroImages, getRoomImageId } from '@/lib/cloudinary';
 
 
 interface Room {
@@ -133,7 +139,8 @@ const STATIC_ROOMS: Room[] = [
 ];
 
 export default function RoomsPage() {
-  const [rooms, setRooms] = useState<Room[]>(STATIC_ROOMS);
+  const [allRooms, setAllRooms] = useState<Room[]>(STATIC_ROOMS);
+  const [filteredRooms, setFilteredRooms] = useState<Room[]>(STATIC_ROOMS);
   const [loading, setLoading] = useState(false);
   const [filters, setFilters] = useState({
     start_date: '',
@@ -142,20 +149,25 @@ export default function RoomsPage() {
     room_type: ''
   });
 
+  const { 
+    visibleItems: visibleRooms, 
+    loadMoreItems, 
+    hasMore, 
+    isLoading: isLoadingMore 
+  } = useProgressiveLoading(filteredRooms, 3, 300);
+
   const applyFilters = () => {
-    let filteredRooms = STATIC_ROOMS;
+    let filtered = allRooms;
     
-    // Filter by room type
     if (filters.room_type) {
-      filteredRooms = filteredRooms.filter(room => room.room_type === filters.room_type);
+      filtered = filtered.filter(room => room.room_type === filters.room_type);
     }
     
-    // Filter by guest capacity
     if (filters.guests > 1) {
-      filteredRooms = filteredRooms.filter(room => room.max_occupancy >= filters.guests);
+      filtered = filtered.filter(room => room.max_occupancy >= filters.guests);
     }
     
-    setRooms(filteredRooms);
+    setFilteredRooms(filtered);
   };
 
   useEffect(() => {
@@ -169,14 +181,14 @@ export default function RoomsPage() {
 
     if (urlFilters.start_date || urlFilters.end_date || urlFilters.room_type || urlFilters.guests > 1) {
       setFilters(urlFilters);
-      let filteredRooms = STATIC_ROOMS;
+      let filtered = STATIC_ROOMS;
       if (urlFilters.room_type) {
-        filteredRooms = filteredRooms.filter(room => room.room_type === urlFilters.room_type);
+        filtered = filtered.filter(room => room.room_type === urlFilters.room_type);
       }
       if (urlFilters.guests > 1) {
-        filteredRooms = filteredRooms.filter(room => room.max_occupancy >= urlFilters.guests);
+        filtered = filtered.filter(room => room.max_occupancy >= urlFilters.guests);
       }
-      setRooms(filteredRooms);
+      setFilteredRooms(filtered);
     }
   }, []);
 
@@ -187,7 +199,7 @@ export default function RoomsPage() {
   const clearFilters = () => {
     const defaultFilters = { start_date: '', end_date: '', guests: 1, room_type: '' };
     setFilters(defaultFilters);
-    setRooms(STATIC_ROOMS);
+    setFilteredRooms(STATIC_ROOMS);
   };
 
   const getRoomTypeLabel = (type: string) => {
@@ -200,47 +212,26 @@ export default function RoomsPage() {
     }
   };
 
-  const getPrimaryImage = (images: Room['images'], roomType: string) => {
-    const imageMap: { [key: string]: string } = {
-      'standard': 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop',
-      'deluxe': 'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop',
-      'suite': 'https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&h=600&fit=crop',
-      'presidential': 'https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&h=600&fit=crop'
-    };
 
-    if (!images || images.length === 0) {
-      return imageMap[roomType] || imageMap['standard'];
-    }
-
-    const primary = images.find(img => img.is_primary);
-    const imageUrl = primary?.url || images[0]?.url;
-
-
-    if (!imageUrl || imageUrl.startsWith('/images/')) {
-      return imageMap[roomType] || imageMap['standard'];
-    }
-
-    return imageUrl;
-  };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-off-white">
-        <Header />
-        <div className="pt-24 pb-16">
-          <div className="container mx-auto px-6">
-            <div className="animate-pulse">
-              <div className="h-8 bg-muted-beige rounded w-1/3 mb-8"></div>
+      <>
+        <OrbitalLoader overlay />
+        <div className="min-h-screen bg-off-white">
+          <Header />
+          <div className="pt-24 pb-16">
+            <div className="container mx-auto px-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {[...Array(6)].map((_, i) => (
-                  <div key={i} className="bg-muted-beige rounded-lg h-96"></div>
+                  <RoomCardSkeleton key={i} />
                 ))}
               </div>
             </div>
           </div>
+          <Footer />
         </div>
-        <Footer />
-      </div>
+      </>
     );
   }
 
@@ -257,10 +248,13 @@ export default function RoomsPage() {
             animate={{ scale: 1 }}
             transition={{ duration: 1.5 }}
           >
-            <img
-              src="https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=1200&h=600&fit=crop"
+            <LazyImage
+              publicId={heroImages.rooms}
               alt="Luxury Hotel Rooms"
+              width={1200}
+              height={600}
               className="w-full h-full object-cover"
+              priority
             />
             <div className="absolute inset-0 bg-gradient-overlay"></div>
           </motion.div>
@@ -322,53 +316,52 @@ export default function RoomsPage() {
 
             {/* Results Count */}
             <motion.div className="mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.4 }}>
-              <p className="text-charcoal-600">{rooms.length} room{rooms.length !== 1 ? 's' : ''} available</p>
+              <p className="text-charcoal-600">{filteredRooms.length} room{filteredRooms.length !== 1 ? 's' : ''} available</p>
             </motion.div>
 
             {/* Rooms Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {rooms.map((room, index) => (
-                <motion.div key={room.id} className="premium-card overflow-hidden group cursor-pointer" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6, delay: 0.1 * index }} whileHover={{ y: -4 }}>
-                  <Link href={`/rooms/${room.slug}`}>
-                    <div className="relative h-64 overflow-hidden">
-                      <img src={getPrimaryImage(room.images, room.room_type)} alt={room.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                      <div className="absolute top-4 left-4">
-                        <span className="bg-gold-600 text-navy-900 px-3 py-1 rounded-full text-sm font-medium">{getRoomTypeLabel(room.room_type)}</span>
-                      </div>
-                      <div className="absolute top-4 right-4 flex items-center space-x-1 bg-black bg-opacity-50 text-white px-2 py-1 rounded">
-                        <Star size={12} fill="currentColor" /><span className="text-xs">Luxury</span>
-                      </div>
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-xl font-serif font-semibold text-navy-900 mb-2 group-hover:text-gold-600 transition-colors">{room.title}</h3>
-                      <p className="text-charcoal-600 text-sm mb-4 line-clamp-2">{room.description}</p>
-                      <div className="flex items-center justify-between text-sm text-charcoal-600 mb-4">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex items-center space-x-1"><Users size={14} /><span>{room.max_occupancy} guests</span></div>
-                          <div>{room.room_size}</div>
-                        </div>
-                      </div>
-                      <div className="mb-4">
-                        <div className="flex flex-wrap gap-1">
-                          {room.amenities.slice(0, 3).map((a, i) => <span key={i} className="text-xs bg-muted-beige text-charcoal-600 px-2 py-1 rounded">{a}</span>)}
-                          {room.amenities.length > 3 && <span className="text-xs text-charcoal-500">+{room.amenities.length - 3} more</span>}
-                        </div>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-2xl font-bold text-navy-900">₹{room.base_price.toLocaleString()}</div>
-                          <div className="text-sm text-charcoal-600">per night</div>
-                        </div>
-                        <div className="btn-gold px-4 py-2 text-sm group-hover:bg-gold-500 transition-colors">View Details</div>
-                      </div>
-                    </div>
-                  </Link>
-                </motion.div>
+              {visibleRooms.map((room, index) => (
+                <RoomCard
+                  key={`${room.id}-${index}`}
+                  room={room}
+                  index={index}
+                  getRoomTypeLabel={getRoomTypeLabel}
+                />
               ))}
             </div>
 
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="text-center mt-12">
+                <button
+                  onClick={loadMoreItems}
+                  disabled={isLoadingMore}
+                  className="btn-gold px-8 py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoadingMore ? (
+                    <div className="flex items-center space-x-2">
+                      <OrbitalLoader size="sm" />
+                      <span>Loading more rooms...</span>
+                    </div>
+                  ) : (
+                    'Load More Rooms'
+                  )}
+                </button>
+              </div>
+            )}
+
+            {/* Loading Skeletons */}
+            {isLoadingMore && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-8">
+                {[...Array(3)].map((_, i) => (
+                  <RoomCardSkeleton key={`skeleton-${i}`} />
+                ))}
+              </div>
+            )}
+
             {/* No Results */}
-            {rooms.length === 0 && !loading && (
+            {filteredRooms.length === 0 && !loading && (
               <motion.div className="text-center py-16" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
                 <div className="text-6xl mb-4">🏨</div>
                 <h3 className="text-2xl font-serif font-semibold text-navy-900 mb-2">No rooms found</h3>

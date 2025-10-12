@@ -1,0 +1,24 @@
+/* Z-Index System for Euro Hotel */
+
+/* Base layers */
+.z-base { z-index: 1; }
+.z-content { z-index: 10; }
+.z-sticky { z-index: 20; }
+
+/* Navigation layers */
+.z-header { z-index: 50; }
+.z-header-dropdown { z-index: 60; }
+.z-mobile-menu { z-index: 55; }
+
+/* Modal layers */
+.z-modal-backdrop { z-index: 100; }
+.z-modal { z-index: 110; }
+.z-modal-content { z-index: 120; }
+
+/* Overlay layers */
+.z-overlay { z-index: 200; }
+.z-tooltip { z-index: 300; }
+
+/* Critical layers */
+.z-notification { z-index: 400; }
+.z-debug { z-index: 999; }

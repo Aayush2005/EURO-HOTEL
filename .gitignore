@@ -37,3 +37,6 @@ test-*.js
 *.test.js
 *.test.ts
 *.test.tsx
+
+# Test directory
+test/

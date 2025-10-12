@@ -34,6 +34,7 @@ Euro Hotel is a comprehensive booking management system that combines a FastAPI 
 - **Framer Motion** - Smooth animations
 - **React Hook Form** - Form management
 - **Lucide Icons** - Modern icon library
+- **Dual Header System** - Optimized for different backgrounds
 
 ## Quick Start
 
@@ -58,6 +59,19 @@ cd frontend
 npm install
 # Environment file should already be configured
 npm run dev
+```
+
+### Cloudinary Setup (One Command)
+```bash
+# Automatically downloads and uploads all images to Cloudinary
+./setup-cloudinary.sh
+```
+
+### Manual Testing
+```bash
+cd test
+npm install
+npm run test:cloudinary
 ```
 
 ### Database Setup
@@ -126,12 +140,16 @@ RAZORPAY_KEY_ID=your-razorpay-key
 SMTP_HOST=smtp.gmail.com
 SMTP_USERNAME=your-email@gmail.com
 FRONTEND_URL=http://localhost:3000
+CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
+CLOUDINARY_API_KEY=your-cloudinary-api-key
+CLOUDINARY_API_SECRET=your-cloudinary-api-secret
 ```
 
 ### Frontend (.env.local)
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:8000
 NEXT_PUBLIC_RAZORPAY_KEY_ID=your-razorpay-key
+NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
 ```
 
 
@@ -139,6 +157,11 @@ NEXT_PUBLIC_RAZORPAY_KEY_ID=your-razorpay-key
 
 ### Running Tests
 ```bash
+# Cloudinary setup test
+cd test
+npm install
+npm run test:cloudinary
+
 # Backend tests
 cd backend
 python -m pytest

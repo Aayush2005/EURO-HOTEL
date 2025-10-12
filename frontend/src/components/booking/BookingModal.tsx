@@ -47,6 +47,19 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+
+  // Prevent body scroll when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
   
   // Step 1: Date and Guest Selection
   const [checkInDate, setCheckInDate] = useState('');
