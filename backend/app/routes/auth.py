@@ -8,6 +8,7 @@ from app.models.user import (
     User, UserRegister, UserLogin, VerifyOTP, ResetPasswordRequest, 
     ResetPassword, UpdateProfile, UserResponse, TokenResponse, UserStatus
 )
+from app.models.pending_registration import PendingRegistration
 from app.auth import (
     get_password_hash, verify_password, validate_password_strength,
     create_access_token, create_refresh_token, verify_token, generate_otp,
@@ -26,7 +27,7 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 @router.post("/register", response_model=dict)
 @limiter.limit("5/minute")
 async def register(request: Request, user_data: UserRegister):
-    """Register a new user"""
+    """Register a new user - stores in pending until OTP verification"""
     
     # Validate password strength
     if not validate_password_strength(user_data.password):
@@ -35,8 +36,12 @@ async def register(request: Request, user_data: UserRegister):
             detail="Password must be at least 8 characters with uppercase, lowercase, number, and special character"
         )
     
-    # Check if user already exists
+    # Check if user already exists (in both users and pending registrations)
     existing_user = await User.find_one(
+        {"$or": [{"email": user_data.email}, {"username": user_data.username}]}
+    )
+    
+    existing_pending = await PendingRegistration.find_one(
         {"$or": [{"email": user_data.email}, {"username": user_data.username}]}
     )
     
@@ -52,65 +57,124 @@ async def register(request: Request, user_data: UserRegister):
                 detail="Username already taken"
             )
     
+    if existing_pending:
+        # Remove old pending registration
+        await existing_pending.delete()
+    
     # Generate OTP
     otp_code = generate_otp()
     otp_expiry = datetime.utcnow() + timedelta(minutes=settings.otp_expire_minutes)
     
-    # Create user
-    user = User(
+    # Store in pending registrations (NOT in users table)
+    pending_registration = PendingRegistration(
         email=user_data.email,
         username=user_data.username,
         password_hash=get_password_hash(user_data.password),
         phone=user_data.phone,
-        status=UserStatus.PENDING,
         otp_code=otp_code,
         otp_expiry=otp_expiry
     )
     
-    await user.insert()
+    await pending_registration.insert()
     
     # Send OTP email
     email_sent = await send_otp_email(user_data.email, otp_code, "account verification")
     
     if not email_sent:
         logger.warning(f"Failed to send OTP email to {user_data.email}")
+        # If email fails, remove pending registration
+        await pending_registration.delete()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to send verification email. Please try again."
+        )
     
     return {
-        "message": "Registration successful. Please check your email for verification code.",
+        "message": "Registration initiated. Please check your email for verification code.",
         "email": user_data.email
     }
 
 @router.post("/verify-otp", response_model=TokenResponse)
 async def verify_otp(response: Response, otp_data: VerifyOTP):
-    """Verify OTP and activate account"""
+    """Verify OTP and create actual user account"""
     
-    user = await User.find_one({"email": otp_data.email})
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
+    # First check if it's a pending registration
+    pending_registration = await PendingRegistration.find_one({"email": otp_data.email})
+    
+    if pending_registration:
+        # This is a new registration verification
+        
+        # Check OTP
+        if pending_registration.otp_code != otp_data.otp_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid OTP code"
+            )
+        
+        # Check OTP expiry
+        if datetime.utcnow() > pending_registration.otp_expiry:
+            # Clean up expired pending registration
+            await pending_registration.delete()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="OTP code has expired. Please register again."
+            )
+        
+        # Check if user was created in the meantime
+        existing_user = await User.find_one(
+            {"$or": [{"email": pending_registration.email}, {"username": pending_registration.username}]}
         )
-    
-    # Check OTP
-    if not user.otp_code or user.otp_code != otp_data.otp_code:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid OTP code"
+        
+        if existing_user:
+            await pending_registration.delete()
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Email or username already registered"
+            )
+        
+        # Create the actual user account
+        user = User(
+            email=pending_registration.email,
+            username=pending_registration.username,
+            password_hash=pending_registration.password_hash,
+            phone=pending_registration.phone,
+            status=UserStatus.ACTIVE  # Directly active since OTP is verified
         )
-    
-    # Check OTP expiry
-    if not user.otp_expiry or datetime.utcnow() > user.otp_expiry:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="OTP code has expired"
-        )
-    
-    # Activate user
-    user.status = UserStatus.ACTIVE
-    user.otp_code = None
-    user.otp_expiry = None
-    user.updated_at = datetime.utcnow()
-    await user.save()
+        
+        await user.insert()
+        
+        # Clean up pending registration
+        await pending_registration.delete()
+        
+    else:
+        # Check if it's an existing user (password reset, etc.)
+        user = await User.find_one({"email": otp_data.email})
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="No pending registration or user found for this email"
+            )
+        
+        # Check OTP for existing user
+        if not user.otp_code or user.otp_code != otp_data.otp_code:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid OTP code"
+            )
+        
+        # Check OTP expiry
+        if not user.otp_expiry or datetime.utcnow() > user.otp_expiry:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="OTP code has expired"
+            )
+        
+        # Activate user and clear OTP
+        user.status = UserStatus.ACTIVE
+        user.otp_code = None
+        user.otp_expiry = None
+        user.updated_at = datetime.utcnow()
+        await user.save()
     
     # Create tokens
     access_token = create_access_token(data={"sub": str(user.id)})

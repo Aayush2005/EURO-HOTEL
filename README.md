@@ -104,7 +104,14 @@ euro-hotel/
 │   │   ├── components/    # Reusable components
 │   │   └── lib/          # Utilities
 │   └── public/           # Static assets
-└── docs/                 # Documentation
+├── docs/                  # All documentation
+│   ├── maintenance/       # Maintenance guides
+│   ├── setup/            # Setup scripts and guides
+│   └── *.md              # Core documentation
+└── tests/                # All test files
+    ├── backend/          # Backend tests
+    ├── frontend/         # Frontend tests
+    └── integration/      # Integration tests
 ```
 
 ## Key Features
@@ -157,14 +164,15 @@ NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME=your-cloudinary-cloud-name
 
 ### Running Tests
 ```bash
-# Cloudinary setup test
-cd test
+# Integration tests
+cd tests/integration
 npm install
 npm run test:cloudinary
 
 # Backend tests
-cd backend
-python -m pytest
+cd tests/backend
+python test_dns_propagation.py
+python test_real_email.py
 
 # Frontend development
 cd frontend

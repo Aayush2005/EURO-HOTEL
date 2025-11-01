@@ -52,7 +52,7 @@ const HeroSection = () => {
   return (
     <section className="relative h-screen flex items-center justify-center overflow-hidden">
       {/* Background Image */}
-      <motion.div 
+      <motion.div
         className="absolute inset-0"
         initial={{ scale: 1.1 }}
         animate={{ scale: 1 }}
@@ -105,9 +105,9 @@ const HeroSection = () => {
           <div className="text-yellow-400 text-sm sm:text-base uppercase tracking-widest font-medium mb-4 sm:mb-6">
             WELCOME TO LUXURY
           </div>
-          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light leading-[0.9] text-shadow mb-6">
-            Where Luxury<br />
-            <span className="text-yellow-400">Meets Heritage</span>
+          <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-light leading-[0.9] text-shadow mb-4">
+            Hospitality<br />
+            <span className="text-yellow-400 mt-2">Reimagined</span>
           </h1>
         </motion.div>
 
@@ -122,7 +122,7 @@ const HeroSection = () => {
           variants={itemVariants}
           className="flex flex-col sm:flex-row gap-6 justify-center items-center"
         >
-          <Link href="/heritage">
+          <Link href="/about">
             <motion.button
               className="btn-gold text-lg px-10 py-4 min-w-[220px]"
               variants={buttonVariants}

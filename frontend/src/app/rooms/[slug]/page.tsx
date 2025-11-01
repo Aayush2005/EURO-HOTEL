@@ -14,7 +14,9 @@ import BookingModal from '@/components/booking/BookingModal';
 import SimplePageWrapper from '@/components/SimplePageWrapper';
 import LazyImage from '@/components/LazyImage';
 import OrbitalLoader from '@/components/OrbitalLoader';
+import ComingSoon from '@/components/ComingSoon';
 import { getCloudinaryUrl, roomImages } from '@/lib/cloudinary';
+import { PAGE_CONFIG } from '@/lib/page-config';
 
 
 interface RoomImage {
@@ -45,8 +47,8 @@ interface Room {
 const STATIC_ROOMS: Room[] = [
   {
     id: "1",
-    slug: "deluxe-heritage-suite",
-    title: "Deluxe Heritage Suite",
+    slug: "deluxe-heritage-room",
+    title: "Deluxe Heritage Room",
     description: "Experience the grandeur of Hyderabadi royalty in our spacious Deluxe Heritage Suite. Featuring traditional décor with modern amenities, this suite offers a perfect blend of luxury and comfort.",
     room_type: "suite",
     amenities: [
@@ -65,8 +67,8 @@ const STATIC_ROOMS: Room[] = [
   },
   {
     id: "2",
-    slug: "royal-presidential-suite",
-    title: "Royal Presidential Suite",
+    slug: "presidential-suite",
+    title: "Presidential Suite",
     description: "The epitome of luxury, our Royal Presidential Suite offers unparalleled elegance and space. Perfect for special occasions and VIP guests seeking the ultimate in comfort and prestige.",
     room_type: "presidential",
     amenities: [
@@ -85,8 +87,8 @@ const STATIC_ROOMS: Room[] = [
   },
   {
     id: "3",
-    slug: "classic-deluxe-room",
-    title: "Classic Deluxe Room",
+    slug: "heritage-suite",
+    title: "Heritage Suite",
     description: "Our Classic Deluxe Room combines traditional Hyderabadi hospitality with contemporary comfort. Ideal for business travelers and couples seeking a refined stay experience.",
     room_type: "deluxe",
     amenities: [
@@ -105,8 +107,8 @@ const STATIC_ROOMS: Room[] = [
   },
   {
     id: "4",
-    slug: "standard-comfort-room",
-    title: "Standard Comfort Room",
+    slug: "standard-heritage-room",
+    title: "Standard Heritage Room",
     description: "Perfect for budget-conscious travelers, our Standard Comfort Room offers all essential amenities with the signature Euro Hotel hospitality and service excellence.",
     room_type: "standard",
     amenities: [
@@ -139,8 +141,20 @@ export default function RoomDetailsPage() {
   const params = useParams();
   const slug = params.slug as string;
   
+  // Check if room details are disabled
+  if (PAGE_CONFIG.ROOM_DETAILS_DISABLED) {
+    return (
+      <ComingSoon
+        title="Room Details"
+        message={PAGE_CONFIG.ROOM_DETAILS_MESSAGE}
+        backLink="/rooms"
+        backText="Back to Rooms"
+      />
+    );
+  }
+  
   const [room, setRoom] = useState<Room | null>(null);
-  const [loading] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
@@ -148,11 +162,37 @@ export default function RoomDetailsPage() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    const foundRoom = STATIC_ROOMS.find(r => r.slug === slug);
-    if (foundRoom) {
-      foundRoom.images = getRoomImages(foundRoom.room_type);
-      setRoom(foundRoom);
-    }
+    const fetchRoom = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/rooms/${slug}`);
+        
+        if (response.ok) {
+          const roomData = await response.json();
+          roomData.images = getRoomImages(roomData.room_type);
+          setRoom(roomData);
+        } else {
+          // Fallback to static data if API fails
+          const foundRoom = STATIC_ROOMS.find(r => r.slug === slug);
+          if (foundRoom) {
+            foundRoom.images = getRoomImages(foundRoom.room_type);
+            setRoom(foundRoom);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching room:', error);
+        // Fallback to static data
+        const foundRoom = STATIC_ROOMS.find(r => r.slug === slug);
+        if (foundRoom) {
+          foundRoom.images = getRoomImages(foundRoom.room_type);
+          setRoom(foundRoom);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRoom();
   }, [slug]);
 
 

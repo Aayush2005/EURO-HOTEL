@@ -16,19 +16,42 @@ const EventsSection = () => {
               Where every gathering becomes a royal affair
             </p>
             
-            {/* Features */}
+            {/* Event Types */}
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
                 <div className="w-3 h-3 bg-gold-600 rounded-full"></div>
-                <span className="text-charcoal-700 font-medium">Grand Ballroom - 500 guests</span>
+                <span className="text-charcoal-700 font-medium">Kitty Parties</span>
               </div>
               <div className="flex items-center space-x-4">
                 <div className="w-3 h-3 bg-gold-600 rounded-full"></div>
-                <span className="text-charcoal-700 font-medium">Executive Boardrooms</span>
+                <span className="text-charcoal-700 font-medium">Outdoor Catering</span>
               </div>
               <div className="flex items-center space-x-4">
                 <div className="w-3 h-3 bg-gold-600 rounded-full"></div>
-                <span className="text-charcoal-700 font-medium">Royal Garden Terrace</span>
+                <span className="text-charcoal-700 font-medium">Corporate Catering</span>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="w-3 h-3 bg-gold-600 rounded-full"></div>
+                <span className="text-charcoal-700 font-medium">Social Events</span>
+              </div>
+            </div>
+            
+            {/* Venue Features */}
+            <div className="mt-8 pt-6 border-t border-gold-200">
+              <h4 className="font-serif text-lg text-navy-900 mb-4">Our Venues</h4>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                  <span className="text-charcoal-600 text-sm">Grand Ballroom - 500 guests</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                  <span className="text-charcoal-600 text-sm">Executive Boardrooms</span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 bg-yellow-400 rounded-full"></div>
+                  <span className="text-charcoal-600 text-sm">Royal Garden Terrace</span>
+                </div>
               </div>
             </div>
             

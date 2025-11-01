@@ -39,7 +39,7 @@ const HistoryCarousel = () => {
   // Auto-play functionality
   useEffect(() => {
     if (!isAutoPlaying) return;
-    
+
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
@@ -74,10 +74,10 @@ const HistoryCarousel = () => {
           className="text-center mb-16"
         >
           <div className="text-sm text-yellow-600 uppercase tracking-widest font-medium mb-4">
-            TIMELESS HERITAGE
+            TIMELESS EXPERIENCE
           </div>
           <h2 className="font-serif text-5xl md:text-6xl font-light text-gray-900 mb-4">
-            Explore <span className="text-yellow-600">History</span>
+            Explore <span className="text-yellow-600">Architecture</span>
           </h2>
           <p className="text-gray-700 text-xl font-light max-w-2xl mx-auto">
             Journey through centuries of royal legacy and architectural marvels
@@ -125,15 +125,15 @@ const HistoryCarousel = () => {
                       {slides[currentSlide].significance}
                     </div>
                   </div>
-                  
+
                   <h3 className="font-serif text-2xl md:text-3xl font-medium text-gray-900 mb-2">
                     {slides[currentSlide].title}
                   </h3>
-                  
+
                   <h4 className="text-yellow-600 text-base md:text-lg font-medium mb-4">
                     {slides[currentSlide].subtitle}
                   </h4>
-                  
+
                   <p className="text-gray-700 leading-relaxed text-sm md:text-base font-light">
                     {slides[currentSlide].description}
                   </p>
@@ -148,7 +148,7 @@ const HistoryCarousel = () => {
             >
               <ChevronLeft className="w-6 h-6 group-hover:scale-110 transition-transform" />
             </button>
-            
+
             <button
               onClick={nextSlide}
               className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 backdrop-blur-sm hover:bg-opacity-30 text-white p-3 rounded-full transition-all duration-300 group"
@@ -163,11 +163,10 @@ const HistoryCarousel = () => {
               <button
                 key={index}
                 onClick={() => goToSlide(index)}
-                className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                  index === currentSlide
-                    ? 'bg-yellow-500 scale-125'
-                    : 'bg-gray-400 hover:bg-yellow-400'
-                }`}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${index === currentSlide
+                  ? 'bg-yellow-500 scale-125'
+                  : 'bg-gray-400 hover:bg-yellow-400'
+                  }`}
               />
             ))}
           </div>

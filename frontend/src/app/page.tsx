@@ -1,6 +1,7 @@
 import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
-import HeritageSection from '@/components/HeritageSection';
+import PhilosophySection from '@/components/PhilosophySection';
+import RestaurantFeatures from '@/components/RestaurantFeatures';
 import HistoryCarousel from '@/components/HistoryCarousel';
 import GallerySection from '@/components/GallerySection';
 import EventsSection from '@/components/EventsSection';
@@ -15,9 +16,10 @@ export default function Home() {
       <div className="min-h-screen">
         <Header />
         <HeroSection />
-        <HeritageSection />
+        <PhilosophySection />
         <HistoryCarousel />
         <GallerySection />
+        <RestaurantFeatures />
         <EventsSection />
         <BookingForm />
         <Footer />

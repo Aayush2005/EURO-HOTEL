@@ -5,6 +5,7 @@ from datetime import date
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
+from pydantic import BaseModel
 from app.models.booking import (
     RoomType, RoomSearchRequest, PriceCheckRequest, BookingHoldRequest,
     BookingConfirmRequest, RoomResponse, PriceBreakdownResponse, BookingResponse,
@@ -146,22 +147,23 @@ async def get_room_details(slug: str):
             detail="Failed to get room details"
         )
 
-@router.post("/rooms/availability")
-async def check_room_availability(
-    room_id: str,
-    start_date: date,
+class AvailabilityRequest(BaseModel):
+    room_id: str
+    start_date: date
     end_date: date
-):
+
+@router.post("/rooms/availability")
+async def check_room_availability(request: AvailabilityRequest):
     """Check availability for a specific room"""
     try:
-        if start_date >= end_date:
+        if request.start_date >= request.end_date:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Check-out date must be after check-in date"
             )
         
         availability = await BookingService.get_room_availability(
-            room_id, start_date, end_date
+            request.room_id, request.start_date, request.end_date
         )
         
         return availability

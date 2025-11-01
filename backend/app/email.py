@@ -12,8 +12,10 @@ async def send_email(to_email: str, subject: str, body: str, is_html: bool = Tru
         # Create message
         message = MIMEMultipart("alternative")
         message["Subject"] = subject
-        message["From"] = settings.smtp_username
+        message["From"] = f"Euro Hotel <{settings.smtp_username}>"
         message["To"] = to_email
+        message["Reply-To"] = settings.smtp_username
+        message["Message-ID"] = f"<{hash(to_email + subject)}@eurohotel.in>"
         
         # Add body to email
         if is_html:
@@ -23,15 +25,43 @@ async def send_email(to_email: str, subject: str, body: str, is_html: bool = Tru
         
         message.attach(part)
         
-        # Send email
-        await aiosmtplib.send(
-            message,
-            hostname=settings.smtp_host,
-            port=settings.smtp_port,
-            start_tls=True,
-            username=settings.smtp_username,
-            password=settings.smtp_password,
-        )
+        # Send email with multiple fallback options
+        try:
+            if settings.smtp_port == 465:
+                # Use SSL for port 465
+                await aiosmtplib.send(
+                    message,
+                    hostname=settings.smtp_host,
+                    port=settings.smtp_port,
+                    use_tls=True,
+                    username=settings.smtp_username,
+                    password=settings.smtp_password,
+                )
+            else:
+                # Use STARTTLS for port 587
+                await aiosmtplib.send(
+                    message,
+                    hostname=settings.smtp_host,
+                    port=settings.smtp_port,
+                    start_tls=True,
+                    username=settings.smtp_username,
+                    password=settings.smtp_password,
+                )
+        except Exception as smtp_error:
+            logger.error(f"SMTP Error: {smtp_error}")
+            # Try alternative method if first fails
+            if settings.smtp_port == 587:
+                logger.info("Retrying with SSL on port 465...")
+                await aiosmtplib.send(
+                    message,
+                    hostname="smtp.hostinger.com",
+                    port=465,
+                    use_tls=True,
+                    username=settings.smtp_username,
+                    password=settings.smtp_password,
+                )
+            else:
+                raise smtp_error
         
         logger.info(f"Email sent successfully to {to_email}")
         return True

@@ -77,7 +77,7 @@ const SolidHeader = () => {
 
         {/* Navigation Links - Desktop */}
         <div className="hidden md:flex items-center space-x-8">
-          {['HOME', 'ROOMS', 'HERITAGE', 'EVENTS'].map((item, index) => (
+          {['HOME', 'ROOMS', 'ABOUT', 'EVENTS'].map((item, index) => (
             <motion.div
               key={item}
               initial={{ opacity: 0, y: -20 }}
@@ -212,7 +212,7 @@ const SolidHeader = () => {
             exit="closed"
           >
             <div className="px-6 py-6 space-y-4">
-              {['HOME', 'ROOMS', 'HERITAGE', 'EVENTS'].map((item, index) => (
+              {['HOME', 'ROOMS', 'ABOUT', 'EVENTS'].map((item, index) => (
                 <motion.div
                   key={item}
                   custom={index}

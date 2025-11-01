@@ -39,8 +39,8 @@ interface Room {
 const STATIC_ROOMS: Room[] = [
   {
     id: "1",
-    slug: "deluxe-heritage-suite",
-    title: "Deluxe Heritage Suite",
+    slug: "deluxe-heritage-room",
+    title: "Deluxe Heritage Room",
     description: "Experience the grandeur of Hyderabadi royalty in our spacious Deluxe Heritage Suite. Featuring traditional décor with modern amenities, this suite offers a perfect blend of luxury and comfort.",
     room_type: "suite",
     amenities: [
@@ -64,8 +64,8 @@ const STATIC_ROOMS: Room[] = [
   },
   {
     id: "2",
-    slug: "royal-presidential-suite",
-    title: "Royal Presidential Suite",
+    slug: "presidential-suite",
+    title: "Presidential Suite",
     description: "The epitome of luxury, our Royal Presidential Suite offers unparalleled elegance and space. Perfect for special occasions and VIP guests seeking the ultimate in comfort and prestige.",
     room_type: "presidential",
     amenities: [
@@ -89,8 +89,8 @@ const STATIC_ROOMS: Room[] = [
   },
   {
     id: "3",
-    slug: "classic-deluxe-room",
-    title: "Classic Deluxe Room",
+    slug: "heritage-suite",
+    title: "Heritage Suite",
     description: "Our Classic Deluxe Room combines traditional Hyderabadi hospitality with contemporary comfort. Ideal for business travelers and couples seeking a refined stay experience.",
     room_type: "deluxe",
     amenities: [
@@ -114,8 +114,8 @@ const STATIC_ROOMS: Room[] = [
   },
   {
     id: "4",
-    slug: "standard-comfort-room",
-    title: "Standard Comfort Room",
+    slug: "standard-heritage-room",
+    title: "Standard Heritage Room",
     description: "Perfect for budget-conscious travelers, our Standard Comfort Room offers all essential amenities with the signature Euro Hotel hospitality and service excellence.",
     room_type: "standard",
     amenities: [
@@ -139,9 +139,9 @@ const STATIC_ROOMS: Room[] = [
 ];
 
 export default function RoomsPage() {
-  const [allRooms, setAllRooms] = useState<Room[]>(STATIC_ROOMS);
-  const [filteredRooms, setFilteredRooms] = useState<Room[]>(STATIC_ROOMS);
-  const [loading, setLoading] = useState(false);
+  const [allRooms, setAllRooms] = useState<Room[]>([]);
+  const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
     start_date: '',
     end_date: '',
@@ -155,6 +155,8 @@ export default function RoomsPage() {
     hasMore, 
     isLoading: isLoadingMore 
   } = useProgressiveLoading(filteredRooms, 3, 300);
+
+  console.log('Visible rooms:', visibleRooms.length);
 
   const applyFilters = () => {
     let filtered = allRooms;
@@ -171,6 +173,45 @@ export default function RoomsPage() {
   };
 
   useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        setLoading(true);
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/rooms`;
+        console.log('Environment API URL:', process.env.NEXT_PUBLIC_API_URL);
+        console.log('Fetching rooms from:', apiUrl);
+        
+        const response = await fetch(apiUrl);
+        console.log('Response status:', response.status);
+        
+        if (response.ok) {
+          const roomsData = await response.json();
+          console.log('Fetched rooms:', roomsData.length, 'rooms');
+          setAllRooms(roomsData);
+          setFilteredRooms(roomsData);
+        } else {
+          console.log('API failed, using static data');
+          // Fallback to static data
+          setAllRooms(STATIC_ROOMS);
+          setFilteredRooms(STATIC_ROOMS);
+        }
+      } catch (error) {
+        console.error('Error fetching rooms:', error);
+        console.log('Using static data due to error');
+        // Fallback to static data
+        setAllRooms(STATIC_ROOMS);
+        setFilteredRooms(STATIC_ROOMS);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRooms();
+  }, []);
+
+  useEffect(() => {
+    console.log('All rooms:', allRooms.length);
+    console.log('Filtered rooms:', filteredRooms.length);
+    
     const urlParams = new URLSearchParams(window.location.search);
     const urlFilters = {
       start_date: urlParams.get('start_date') || '',
@@ -179,18 +220,21 @@ export default function RoomsPage() {
       room_type: urlParams.get('room_type') || ''
     };
 
+    console.log('URL filters:', urlFilters);
+
     if (urlFilters.start_date || urlFilters.end_date || urlFilters.room_type || urlFilters.guests > 1) {
       setFilters(urlFilters);
-      let filtered = STATIC_ROOMS;
+      let filtered = allRooms;
       if (urlFilters.room_type) {
         filtered = filtered.filter(room => room.room_type === urlFilters.room_type);
       }
       if (urlFilters.guests > 1) {
         filtered = filtered.filter(room => room.max_occupancy >= urlFilters.guests);
       }
+      console.log('Filtered rooms after URL params:', filtered.length);
       setFilteredRooms(filtered);
     }
-  }, []);
+  }, [allRooms]);
 
   const handleFilterChange = (key: string, value: any) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -199,7 +243,7 @@ export default function RoomsPage() {
   const clearFilters = () => {
     const defaultFilters = { start_date: '', end_date: '', guests: 1, room_type: '' };
     setFilters(defaultFilters);
-    setFilteredRooms(STATIC_ROOMS);
+    setFilteredRooms(allRooms);
   };
 
   const getRoomTypeLabel = (type: string) => {
@@ -317,6 +361,7 @@ export default function RoomsPage() {
             {/* Results Count */}
             <motion.div className="mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.4 }}>
               <p className="text-charcoal-600">{filteredRooms.length} room{filteredRooms.length !== 1 ? 's' : ''} available</p>
+              <p className="text-sm text-gray-500">Debug: All rooms: {allRooms.length}, Visible rooms: {visibleRooms.length}, Loading: {loading.toString()}</p>
             </motion.div>
 
             {/* Rooms Grid */}

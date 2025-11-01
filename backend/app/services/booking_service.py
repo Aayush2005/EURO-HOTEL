@@ -39,7 +39,10 @@ class BookingService:
         end_date: date
     ) -> Dict[str, Any]:
         """Check room availability for date range"""
-        room = await Room.get(room_id)
+        try:
+            room = await Room.get(PydanticObjectId(room_id))
+        except Exception:
+            room = None
         if not room or not room.active:
             return {"available": False, "reason": "Room not found or inactive"}
         
@@ -80,7 +83,10 @@ class BookingService:
     @staticmethod
     async def calculate_pricing(request: PriceCheckRequest) -> PriceBreakdownResponse:
         """Calculate detailed pricing for booking request"""
-        room = await Room.get(request.room_id)
+        try:
+            room = await Room.get(PydanticObjectId(request.room_id))
+        except Exception:
+            room = None
         if not room:
             raise ValueError("Room not found")
         

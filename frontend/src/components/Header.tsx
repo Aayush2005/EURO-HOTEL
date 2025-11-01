@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import AuthModal from '@/components/auth/AuthModal';
 import ProfileModal from '@/components/auth/ProfileModal';
 import { useClickOutside } from '@/hooks/useClickOutside';
+import { PAGE_CONFIG } from '@/lib/page-config';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -100,22 +101,35 @@ const Header = () => {
 
         {/* Navigation Links - Desktop */}
         <div className="hidden md:flex items-center space-x-8">
-          {['HOME', 'ROOMS', 'HERITAGE', 'EVENTS'].map((item, index) => (
-            <motion.div
-              key={item}
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-            >
-              <Link 
-                href={item === 'HOME' ? '/' : `/${item.toLowerCase()}`}
-                className="text-white hover:text-yellow-400 transition-all duration-300 font-medium tracking-wide relative group"
+          {['HOME', 'ROOMS', 'ABOUT', 'EVENTS'].map((item, index) => {
+            const isDisabled = item === 'EVENTS' && PAGE_CONFIG.EVENTS_DISABLED;
+            
+            return (
+              <motion.div
+                key={item}
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                {item}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-yellow-400 transition-all duration-300 group-hover:w-full"></span>
-              </Link>
-            </motion.div>
-          ))}
+                {isDisabled ? (
+                  <span 
+                    className="text-gray-400 cursor-not-allowed font-medium tracking-wide relative"
+                    title="Coming Soon"
+                  >
+                    {item}
+                  </span>
+                ) : (
+                  <Link 
+                    href={item === 'HOME' ? '/' : `/${item.toLowerCase()}`}
+                    className="text-white hover:text-yellow-400 transition-all duration-300 font-medium tracking-wide relative group"
+                  >
+                    {item}
+                    <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-yellow-400 transition-all duration-300 group-hover:w-full"></span>
+                  </Link>
+                )}
+              </motion.div>
+            );
+          })}
         </div>
 
         {/* Action Section - Desktop */}
@@ -255,24 +269,36 @@ const Header = () => {
             exit="closed"
           >
             <div className="px-6 py-6 space-y-4">
-              {['HOME', 'ROOMS', 'HERITAGE', 'EVENTS'].map((item, index) => (
-                <motion.div
-                  key={item}
-                  custom={index}
-                  variants={menuItemVariants}
-                  initial="closed"
-                  animate="open"
-                  exit="closed"
-                >
-                  <Link 
-                    href={item === 'HOME' ? '/' : `/${item.toLowerCase()}`}
-                    className="block text-white hover:text-yellow-400 transition-colors py-3 font-medium tracking-wide"
-                    onClick={() => setIsMenuOpen(false)}
+              {['HOME', 'ROOMS', 'ABOUT', 'EVENTS'].map((item, index) => {
+                const isDisabled = item === 'EVENTS' && PAGE_CONFIG.EVENTS_DISABLED;
+                
+                return (
+                  <motion.div
+                    key={item}
+                    custom={index}
+                    variants={menuItemVariants}
+                    initial="closed"
+                    animate="open"
+                    exit="closed"
                   >
-                    {item}
-                  </Link>
-                </motion.div>
-              ))}
+                    {isDisabled ? (
+                      <span 
+                        className="block text-gray-400 cursor-not-allowed py-3 font-medium tracking-wide"
+                      >
+                        {item} (Coming Soon)
+                      </span>
+                    ) : (
+                      <Link 
+                        href={item === 'HOME' ? '/' : `/${item.toLowerCase()}`}
+                        className="block text-white hover:text-yellow-400 transition-colors py-3 font-medium tracking-wide"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        {item}
+                      </Link>
+                    )}
+                  </motion.div>
+                );
+              })}
               
               <motion.div
                 custom={4}

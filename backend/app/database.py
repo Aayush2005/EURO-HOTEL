@@ -2,6 +2,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
 from app.models.user import User, Session
 from app.models.booking import Room, RoomInventory, Booking, Payment, PromoCode, AuditLog
+from app.models.pending_registration import PendingRegistration
 from app.config import settings
 
 class Database:
@@ -20,7 +21,7 @@ async def connect_to_mongo():
         database=db.database,
         document_models=[
             User, Session, Room, RoomInventory, 
-            Booking, Payment, PromoCode, AuditLog
+            Booking, Payment, PromoCode, AuditLog, PendingRegistration
         ]
     )
 

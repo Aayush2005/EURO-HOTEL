@@ -137,6 +137,19 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
       return;
     }
 
+    if (new Date(checkInDate) >= new Date(checkOutDate)) {
+      toast.error('Check-out date must be after check-in date');
+      return;
+    }
+
+    console.log('Sending price check request:', {
+      room_id: room.id,
+      start_date: checkInDate,
+      end_date: checkOutDate,
+      guests: guests,
+      promo_code: null
+    });
+
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/bookings/price-check`, {
@@ -150,13 +163,14 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
           start_date: checkInDate,
           end_date: checkOutDate,
           guests: guests,
-          rooms: rooms,
           promo_code: null
         })
       });
 
       if (!response.ok) {
-        throw new Error('Failed to calculate price');
+        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
+        console.error('Price check error:', response.status, errorData);
+        throw new Error(`Failed to calculate price: ${errorData.detail || 'Unknown error'}`);
       }
 
       const pricingData = await response.json();

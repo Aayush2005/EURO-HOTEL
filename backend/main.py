@@ -12,6 +12,7 @@ from app.routes.auth import router as auth_router, limiter
 from app.routes.booking import router as booking_router
 from app.routes.payment import router as payment_router
 from app.routes.admin import router as admin_router
+from app.routes.rooms import router as rooms_router
 from app.config import settings
 
 # Configure logging
@@ -61,6 +62,7 @@ app.include_router(auth_router)
 app.include_router(booking_router)
 app.include_router(payment_router)
 app.include_router(admin_router)
+app.include_router(rooms_router)
 
 @app.get("/")
 async def root():

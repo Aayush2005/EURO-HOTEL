@@ -39,4 +39,4 @@ test-*.js
 *.test.tsx
 
 # Test directory
-test/
+tests/
