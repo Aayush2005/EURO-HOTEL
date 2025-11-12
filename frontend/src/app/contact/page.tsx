@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import CountryCodeDropdown from '@/components/ui/CountryCodeDropdown';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +14,8 @@ const ContactPage = () => {
     phone: '',
     message: ''
   });
+  const [countryCode, setCountryCode] = useState('+91');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -30,6 +33,8 @@ const ContactPage = () => {
       
       setMessage('Thank you for your message! We will get back to you within 24 hours.');
       setFormData({ name: '', email: '', phone: '', message: '' });
+      setCountryCode('+91');
+      setPhoneNumber('');
     } catch {
       setMessage('Sorry, there was an error sending your message. Please try again.');
     } finally {
@@ -38,9 +43,28 @@ const ContactPage = () => {
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === 'phoneNumber') {
+      const digitsOnly = value.replace(/\D/g, '');
+      setPhoneNumber(digitsOnly);
+      setFormData({
+        ...formData,
+        phone: `${countryCode}${digitsOnly}`
+      });
+    } else {
+      setFormData({
+        ...formData,
+        [name]: value
+      });
+    }
+  };
+
+  const handleCountryCodeChange = (newCountryCode: string) => {
+    setCountryCode(newCountryCode);
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      phone: `${newCountryCode}${phoneNumber}`
     });
   };
 
@@ -195,13 +219,42 @@ const ContactPage = () => {
                     <label className="block text-sm font-medium text-charcoal-700 mb-2">
                       Phone Number
                     </label>
-                    <input
-                      type="tel"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gold-500 transition-colors"
-                    />
+                    <div className="flex gap-2">
+                      <CountryCodeDropdown
+                        value={countryCode}
+                        onChange={handleCountryCodeChange}
+                        className="flex-shrink-0"
+                      />
+                      <div className="relative flex-1">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
+                        <input
+                          type="tel"
+                          name="phoneNumber"
+                          value={phoneNumber}
+                          onChange={handleChange}
+                          onKeyDown={(e) => {
+                            // Allow backspace, delete, tab, escape, enter, and arrow keys
+                            if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode) ||
+                                // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                                (e.keyCode === 65 && e.ctrlKey) ||
+                                (e.keyCode === 67 && e.ctrlKey) ||
+                                (e.keyCode === 86 && e.ctrlKey) ||
+                                (e.keyCode === 88 && e.ctrlKey)) {
+                              return;
+                            }
+                            // Ensure that it is a number and stop the keypress
+                            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                              e.preventDefault();
+                            }
+                          }}
+                          className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gold-500 transition-colors"
+                          placeholder="1234567890"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs text-charcoal-600 mt-1">
+                      Enter digits only (no spaces or special characters)
+                    </p>
                   </div>
 
                   <div>

@@ -130,10 +130,10 @@ const BookingFormContent = () => {
               RESERVE YOUR STAY
             </div>
             <h2 className="font-serif text-4xl md:text-5xl font-light text-white mb-4">
-              Book Your <span className="text-gold-400">Royal Experience</span>
+              Book Your <span className="text-gold-400">Perfect Stay</span>
             </h2>
             <p className="text-white/80 text-lg font-light max-w-2xl mx-auto">
-              Experience luxury redefined in the heart of Hyderabad&apos;s heritage district
+              Experience exceptional comfort and personalized service in the heart of Hyderabad
             </p>
           </motion.div>
 
@@ -209,9 +209,9 @@ const BookingFormContent = () => {
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gold-500 transition-colors"
                   >
-                    <option value="standard">Standard Heritage Room - ₹8,500/night</option>
-                    <option value="deluxe">Deluxe Heritage Room - ₹12,500/night</option>
-                    <option value="suite">Heritage Suite - ₹18,500/night</option>
+                    <option value="standard">Standard Comfort Room - ₹8,500/night</option>
+                    <option value="deluxe">Deluxe Comfort Room - ₹12,500/night</option>
+                    <option value="suite">Executive Suite - ₹18,500/night</option>
                     <option value="presidential">Presidential Suite - ₹35,000/night</option>
                   </select>
                 </div>

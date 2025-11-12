@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Users, Filter, Search, Star } from 'lucide-react';
-import Link from 'next/link';
+import { Users, Filter, Search } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import SimplePageWrapper from '@/components/SimplePageWrapper';
@@ -11,8 +10,8 @@ import LazyImage from '@/components/LazyImage';
 import OrbitalLoader from '@/components/OrbitalLoader';
 import RoomCardSkeleton from '@/components/skeletons/RoomCardSkeleton';
 import RoomCard from '@/components/RoomCard';
-import { useProgressiveLoading } from '@/hooks/useInfiniteScroll';
-import { getCloudinaryUrl, roomImages, heroImages, getRoomImageId } from '@/lib/cloudinary';
+// import { useProgressiveLoading } from '@/hooks/useInfiniteScroll'; // Temporarily disabled for debugging
+import { heroImages } from '@/lib/cloudinary';
 
 
 interface Room {
@@ -36,107 +35,7 @@ interface Room {
 }
 
 
-const STATIC_ROOMS: Room[] = [
-  {
-    id: "1",
-    slug: "deluxe-heritage-room",
-    title: "Deluxe Heritage Room",
-    description: "Experience the grandeur of Hyderabadi royalty in our spacious Deluxe Heritage Suite. Featuring traditional décor with modern amenities, this suite offers a perfect blend of luxury and comfort.",
-    room_type: "suite",
-    amenities: [
-      "Free Wi-Fi", "Air Conditioning", "Mini Bar", "Room Service", 
-      "Flat Screen TV", "Private Bathroom", "Balcony with City View", 
-      "Coffee/Tea Maker", "Safe", "Telephone"
-    ],
-    images: [
-      {
-        url: "https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&h=600&fit=crop",
-        alt: "Deluxe Heritage Suite",
-        is_primary: true
-      }
-    ],
-    base_price: 8500,
-    max_occupancy: 4,
-    bed_configuration: "1 King Bed + 1 Sofa Bed",
-    room_size: "45 sqm",
-    view: "City View",
-    available: true
-  },
-  {
-    id: "2",
-    slug: "presidential-suite",
-    title: "Presidential Suite",
-    description: "The epitome of luxury, our Royal Presidential Suite offers unparalleled elegance and space. Perfect for special occasions and VIP guests seeking the ultimate in comfort and prestige.",
-    room_type: "presidential",
-    amenities: [
-      "Free Wi-Fi", "Air Conditioning", "Mini Bar", "24/7 Room Service", 
-      "Smart TV", "Marble Bathroom", "Private Terrace", "Espresso Machine", 
-      "Personal Safe", "Telephone", "Butler Service", "Jacuzzi"
-    ],
-    images: [
-      {
-        url: "https://images.unsplash.com/photo-1591088398332-8a7791972843?w=800&h=600&fit=crop",
-        alt: "Royal Presidential Suite",
-        is_primary: true
-      }
-    ],
-    base_price: 15000,
-    max_occupancy: 6,
-    bed_configuration: "1 King Bed + 2 Single Beds",
-    room_size: "80 sqm",
-    view: "Panoramic City View",
-    available: true
-  },
-  {
-    id: "3",
-    slug: "heritage-suite",
-    title: "Heritage Suite",
-    description: "Our Classic Deluxe Room combines traditional Hyderabadi hospitality with contemporary comfort. Ideal for business travelers and couples seeking a refined stay experience.",
-    room_type: "deluxe",
-    amenities: [
-      "Free Wi-Fi", "Air Conditioning", "Mini Fridge", "Room Service", 
-      "LED TV", "Private Bathroom", "Work Desk", "Coffee/Tea Maker", 
-      "Safe", "Telephone"
-    ],
-    images: [
-      {
-        url: "https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&h=600&fit=crop",
-        alt: "Classic Deluxe Room",
-        is_primary: true
-      }
-    ],
-    base_price: 5500,
-    max_occupancy: 3,
-    bed_configuration: "1 Queen Bed",
-    room_size: "30 sqm",
-    view: "Garden View",
-    available: true
-  },
-  {
-    id: "4",
-    slug: "standard-heritage-room",
-    title: "Standard Heritage Room",
-    description: "Perfect for budget-conscious travelers, our Standard Comfort Room offers all essential amenities with the signature Euro Hotel hospitality and service excellence.",
-    room_type: "standard",
-    amenities: [
-      "Free Wi-Fi", "Air Conditioning", "Room Service", "TV", 
-      "Private Bathroom", "Work Desk", "Coffee/Tea Maker", "Telephone"
-    ],
-    images: [
-      {
-        url: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&h=600&fit=crop",
-        alt: "Standard Comfort Room",
-        is_primary: true
-      }
-    ],
-    base_price: 3500,
-    max_occupancy: 2,
-    bed_configuration: "1 Double Bed",
-    room_size: "25 sqm",
-    view: "Street View",
-    available: true
-  }
-];
+
 
 export default function RoomsPage() {
   const [allRooms, setAllRooms] = useState<Room[]>([]);
@@ -149,14 +48,31 @@ export default function RoomsPage() {
     room_type: ''
   });
 
-  const { 
-    visibleItems: visibleRooms, 
-    loadMoreItems, 
-    hasMore, 
-    isLoading: isLoadingMore 
-  } = useProgressiveLoading(filteredRooms, 3, 300);
+  // Temporarily use simple state to debug the issue
+  const [visibleCount, setVisibleCount] = useState(3);
+  const visibleRooms = filteredRooms.slice(0, visibleCount);
+  const hasMore = visibleCount < filteredRooms.length;
+  const isLoadingMore = false;
+  
+  const loadMoreItems = () => {
+    setVisibleCount(prev => Math.min(prev + 3, filteredRooms.length));
+  };
 
   console.log('Visible rooms:', visibleRooms.length);
+  console.log('Filtered rooms:', filteredRooms.length);
+  console.log('All rooms:', allRooms.length);
+  
+  // Debug: Check for duplicates in the arrays
+  const visibleRoomIds = visibleRooms.map(r => r.id);
+  const uniqueVisibleIds = [...new Set(visibleRoomIds)];
+  if (visibleRoomIds.length !== uniqueVisibleIds.length) {
+    console.error('Duplicates found in visibleRooms:', visibleRoomIds.length, 'total,', uniqueVisibleIds.length, 'unique');
+  }
+  
+  // Reset visible count when filtered rooms change
+  useEffect(() => {
+    setVisibleCount(3);
+  }, [filteredRooms]);
 
   const applyFilters = () => {
     let filtered = allRooms;
@@ -189,17 +105,16 @@ export default function RoomsPage() {
           setAllRooms(roomsData);
           setFilteredRooms(roomsData);
         } else {
-          console.log('API failed, using static data');
-          // Fallback to static data
-          setAllRooms(STATIC_ROOMS);
-          setFilteredRooms(STATIC_ROOMS);
+          console.error('API request failed with status:', response.status);
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+          setAllRooms([]);
+          setFilteredRooms([]);
         }
       } catch (error) {
         console.error('Error fetching rooms:', error);
-        console.log('Using static data due to error');
-        // Fallback to static data
-        setAllRooms(STATIC_ROOMS);
-        setFilteredRooms(STATIC_ROOMS);
+        setAllRooms([]);
+        setFilteredRooms([]);
       } finally {
         setLoading(false);
       }
@@ -209,6 +124,9 @@ export default function RoomsPage() {
   }, []);
 
   useEffect(() => {
+    // Only process URL filters after rooms are loaded
+    if (allRooms.length === 0) return;
+    
     console.log('All rooms:', allRooms.length);
     console.log('Filtered rooms:', filteredRooms.length);
     
@@ -359,21 +277,29 @@ export default function RoomsPage() {
             </motion.div>
 
             {/* Results Count */}
-            <motion.div className="mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.4 }}>
+            {/* <motion.div className="mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6, delay: 0.4 }}>
               <p className="text-charcoal-600">{filteredRooms.length} room{filteredRooms.length !== 1 ? 's' : ''} available</p>
               <p className="text-sm text-gray-500">Debug: All rooms: {allRooms.length}, Visible rooms: {visibleRooms.length}, Loading: {loading.toString()}</p>
-            </motion.div>
+            </motion.div> */}
 
             {/* Rooms Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {visibleRooms.map((room, index) => (
-                <RoomCard
-                  key={`${room.id}-${index}`}
-                  room={room}
-                  index={index}
-                  getRoomTypeLabel={getRoomTypeLabel}
-                />
-              ))}
+              {visibleRooms.map((room, index) => {
+                // Debug: Check for duplicates
+                const duplicateCount = visibleRooms.filter(r => r.id === room.id).length;
+                if (duplicateCount > 1) {
+                  console.warn(`Duplicate room found: ${room.id} appears ${duplicateCount} times`);
+                }
+                
+                return (
+                  <RoomCard
+                    key={room.id}
+                    room={room}
+                    index={index}
+                    getRoomTypeLabel={getRoomTypeLabel}
+                  />
+                );
+              })}
             </div>
 
             {/* Load More Button */}
@@ -409,9 +335,22 @@ export default function RoomsPage() {
             {filteredRooms.length === 0 && !loading && (
               <motion.div className="text-center py-16" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.6 }}>
                 <div className="text-6xl mb-4">🏨</div>
-                <h3 className="text-2xl font-serif font-semibold text-navy-900 mb-2">No rooms found</h3>
-                <p className="text-charcoal-600 mb-6">Try adjusting your search criteria or dates</p>
-                <button onClick={clearFilters} className="btn-gold">Clear Filters</button>
+                <h3 className="text-2xl font-serif font-semibold text-navy-900 mb-2">
+                  {allRooms.length === 0 ? 'Unable to load rooms' : 'No rooms found'}
+                </h3>
+                <p className="text-charcoal-600 mb-6">
+                  {allRooms.length === 0 
+                    ? 'Please check your connection and try again, or contact support if the issue persists.'
+                    : 'Try adjusting your search criteria or dates'
+                  }
+                </p>
+                {allRooms.length === 0 ? (
+                  <button onClick={() => window.location.reload()} className="btn-gold">
+                    Retry
+                  </button>
+                ) : (
+                  <button onClick={clearFilters} className="btn-gold">Clear Filters</button>
+                )}
               </motion.div>
             )}
           </div>

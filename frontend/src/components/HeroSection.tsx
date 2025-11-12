@@ -115,7 +115,7 @@ const HeroSection = () => {
           variants={itemVariants}
           className="text-lg sm:text-xl md:text-2xl mb-10 sm:mb-12 opacity-90 font-light max-w-3xl mx-auto leading-relaxed"
         >
-          Experience the grandeur of Hyderabad&apos;s royal legacy in every moment of your stay
+          Experience exceptional comfort and personalized service in the heart of Hyderabad
         </motion.p>
 
         <motion.div

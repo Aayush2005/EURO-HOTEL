@@ -30,8 +30,8 @@ const Footer = () => {
             </div>
 
             <p className="text-gray-300 leading-relaxed mb-8 text-lg font-light">
-              Where Hyderabad&apos;s royal heritage meets contemporary luxury. 
-              Experience the grandeur of the Nizams in every moment.
+              Where comfort meets exceptional hospitality in the heart of Hyderabad. 
+              Experience modern amenities and warm service designed for your convenience.
             </p>
             
             {/* Social Links */}
@@ -58,8 +58,8 @@ const Footer = () => {
           <div>
             <h3 className="font-serif text-xl font-medium mb-6 text-yellow-400">Explore</h3>
             <ul className="space-y-4">
-              <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">Heritage Tours</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">Royal Suites</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">City Tours</a></li>
+              <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">Comfort Suites</a></li>
               <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">Fine Dining</a></li>
               <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">Spa & Wellness</a></li>
               <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">Events</a></li>
@@ -72,7 +72,7 @@ const Footer = () => {
             <div className="space-y-4 text-gray-300 font-light">
               <div>
                 <p className="font-medium text-white mb-1">Address</p>
-                <p>Heritage Quarter, Old City<br />Hyderabad, Telangana 500002</p>
+                <p>Central Business District<br />Hyderabad, Telangana 500002</p>
               </div>
               <div>
                 <p className="font-medium text-white mb-1">Reservations</p>

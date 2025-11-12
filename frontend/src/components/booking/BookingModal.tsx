@@ -4,10 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   X, Calendar, Users, CreditCard, Clock, 
-  CheckCircle, AlertCircle, Minus, Plus 
+  CheckCircle, AlertCircle, Minus, Plus, Phone 
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthModal } from '@/contexts/AuthModalContext';
+import CountryCodeDropdown from '@/components/ui/CountryCodeDropdown';
 
 interface Room {
   id: string;
@@ -44,7 +46,8 @@ interface GuestDetails {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  const { openAuthModal } = useAuthModal();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -71,12 +74,14 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
   
   // Step 2: Guest Details
   const [guestDetails, setGuestDetails] = useState<GuestDetails>({
-    name: user?.username || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
+    name: '',
+    email: '',
+    phone: '',
     id_type: 'aadhar',
     id_number: ''
   });
+  const [countryCode, setCountryCode] = useState('+91');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
   const [holdToken, setHoldToken] = useState('');
   const [holdExpiresAt, setHoldExpiresAt] = useState<Date | null>(null);
@@ -112,12 +117,14 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
 
     setPricing(null);
     setGuestDetails({
-      name: user?.username || '',
-      email: user?.email || '',
-      phone: user?.phone || '',
+      name: '',
+      email: '',
+      phone: '',
       id_type: 'aadhar',
       id_number: ''
     });
+    setCountryCode('+91');
+    setPhoneNumber('');
     setSpecialRequests('');
     setHoldToken('');
     setHoldExpiresAt(null);
@@ -181,6 +188,24 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
         return;
       }
 
+      // Check if user is authenticated before proceeding
+      if (!isAuthenticated) {
+        onClose(); // Close the booking modal
+        openAuthModal('login'); // Open the header's auth modal
+        return;
+      }
+
+      // Pre-fill guest details with user info
+      if (user) {
+        setGuestDetails({
+          name: user.username || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          id_type: 'aadhar',
+          id_number: ''
+        });
+      }
+
       setStep(2);
     } catch (error) {
       console.error('Error calculating price:', error);
@@ -211,7 +236,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
           start_date: checkInDate,
           end_date: checkOutDate,
           guests: guests,
-          rooms: rooms,
           guest_details: guestDetails,
           special_requests: specialRequests || null,
           promo_code: null,
@@ -308,7 +332,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
   };
 
   return (
-    <AnimatePresence>
+    <>
+      <AnimatePresence>
       {isOpen && (
         <motion.div
           className="fixed inset-0 z-[9998] flex items-center justify-center p-4"
@@ -568,13 +593,51 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
                       <label className="block text-sm font-medium text-charcoal-700 mb-2">
                         Phone Number *
                       </label>
-                      <input
-                        type="tel"
-                        value={guestDetails.phone}
-                        onChange={(e) => setGuestDetails({...guestDetails, phone: e.target.value})}
-                        className="w-full px-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        required
-                      />
+                      <div className="flex gap-2">
+                        <CountryCodeDropdown
+                          value={countryCode}
+                          onChange={(newCode) => {
+                            setCountryCode(newCode);
+                            setGuestDetails({...guestDetails, phone: `${newCode}${phoneNumber}`});
+                          }}
+                          className="flex-shrink-0"
+                        />
+                        <div className="relative flex-1">
+                          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
+                          <input
+                            type="tel"
+                            value={phoneNumber}
+                            onChange={(e) => {
+                              const digitsOnly = e.target.value.replace(/\D/g, '');
+                              setPhoneNumber(digitsOnly);
+                              setGuestDetails({...guestDetails, phone: `${countryCode}${digitsOnly}`});
+                            }}
+                            onKeyDown={(e) => {
+                              // Allow backspace, delete, tab, escape, enter, and arrow keys
+                              if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode) ||
+                                  // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                                  (e.keyCode === 65 && e.ctrlKey) ||
+                                  (e.keyCode === 67 && e.ctrlKey) ||
+                                  (e.keyCode === 86 && e.ctrlKey) ||
+                                  (e.keyCode === 88 && e.ctrlKey)) {
+                                return;
+                              }
+                              // Ensure that it is a number and stop the keypress
+                              if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                            placeholder="1234567890"
+                            minLength={7}
+                            maxLength={15}
+                            required
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs text-charcoal-600 mt-1">
+                        Enter digits only (no spaces or special characters)
+                      </p>
                     </div>
                     
                     <div>
@@ -687,6 +750,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
         </motion.div>
       )}
     </AnimatePresence>
+    </>
   );
 };
 

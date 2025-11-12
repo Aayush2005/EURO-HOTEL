@@ -11,9 +11,10 @@ class UserStatus(str, Enum):
 
 class User(Document):
     email: Indexed(EmailStr, unique=True)
-    username: Indexed(str, unique=True)
+    name: str  # Full name of the person
     password_hash: str
     phone: str
+    country_code: str = Field(default="+91")  # Separate field for country code
     status: UserStatus = UserStatus.PENDING
     otp_code: Optional[str] = None
     otp_expiry: Optional[datetime] = None
@@ -25,7 +26,6 @@ class User(Document):
         name = "users"
         indexes = [
             [("email", 1)],
-            [("username", 1)],
             [("otp_expiry", 1)],
         ]
 
@@ -46,12 +46,13 @@ class Session(Document):
 # Pydantic models for API
 class UserRegister(BaseModel):
     email: EmailStr
-    username: str = Field(..., min_length=3, max_length=20, pattern=r'^[a-zA-Z0-9_]+$')
+    name: str = Field(..., min_length=2, max_length=100)
     password: str = Field(..., min_length=8)
-    phone: str = Field(..., pattern=r'^\+?[1-9]\d{1,14}$')
+    phone: str = Field(..., pattern=r'^[1-9]\d{6,14}$')  # Just the phone number without country code
+    country_code: str = Field(default="+91")
 
 class UserLogin(BaseModel):
-    login: str  # email or username
+    email: EmailStr  # Only email for login
     password: str
 
 class VerifyOTP(BaseModel):
@@ -67,16 +68,18 @@ class ResetPassword(BaseModel):
     new_password: str = Field(..., min_length=8)
 
 class UpdateProfile(BaseModel):
-    username: Optional[str] = Field(None, min_length=3, max_length=20, pattern=r'^[a-zA-Z0-9_]+$')
-    phone: Optional[str] = Field(None, pattern=r'^\+?[1-9]\d{1,14}$')
+    name: Optional[str] = Field(None, min_length=2, max_length=100)
+    phone: Optional[str] = Field(None, pattern=r'^[1-9]\d{6,14}$')  # Just the phone number without country code
+    country_code: Optional[str] = None
     current_password: Optional[str] = None
     new_password: Optional[str] = Field(None, min_length=8)
 
 class UserResponse(BaseModel):
     id: str
     email: EmailStr
-    username: str
+    name: str
     phone: str
+    country_code: str
     status: UserStatus
     created_at: datetime
 

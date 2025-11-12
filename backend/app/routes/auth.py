@@ -37,25 +37,20 @@ async def register(request: Request, user_data: UserRegister):
         )
     
     # Check if user already exists (in both users and pending registrations)
+    # Case-insensitive email check
     existing_user = await User.find_one(
-        {"$or": [{"email": user_data.email}, {"username": user_data.username}]}
+        {"email": {"$regex": f"^{user_data.email}$", "$options": "i"}}
     )
     
     existing_pending = await PendingRegistration.find_one(
-        {"$or": [{"email": user_data.email}, {"username": user_data.username}]}
+        {"email": {"$regex": f"^{user_data.email}$", "$options": "i"}}
     )
     
     if existing_user:
-        if existing_user.email == user_data.email:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email already registered"
-            )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already taken"
-            )
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered"
+        )
     
     if existing_pending:
         # Remove old pending registration
@@ -68,9 +63,10 @@ async def register(request: Request, user_data: UserRegister):
     # Store in pending registrations (NOT in users table)
     pending_registration = PendingRegistration(
         email=user_data.email,
-        username=user_data.username,
+        name=user_data.name,
         password_hash=get_password_hash(user_data.password),
         phone=user_data.phone,
+        country_code=user_data.country_code,
         otp_code=otp_code,
         otp_expiry=otp_expiry
     )
@@ -98,8 +94,10 @@ async def register(request: Request, user_data: UserRegister):
 async def verify_otp(response: Response, otp_data: VerifyOTP):
     """Verify OTP and create actual user account"""
     
-    # First check if it's a pending registration
-    pending_registration = await PendingRegistration.find_one({"email": otp_data.email})
+    # First check if it's a pending registration (case-insensitive)
+    pending_registration = await PendingRegistration.find_one(
+        {"email": {"$regex": f"^{otp_data.email}$", "$options": "i"}}
+    )
     
     if pending_registration:
         # This is a new registration verification
@@ -120,24 +118,25 @@ async def verify_otp(response: Response, otp_data: VerifyOTP):
                 detail="OTP code has expired. Please register again."
             )
         
-        # Check if user was created in the meantime
+        # Check if user was created in the meantime (case-insensitive email)
         existing_user = await User.find_one(
-            {"$or": [{"email": pending_registration.email}, {"username": pending_registration.username}]}
+            {"email": {"$regex": f"^{pending_registration.email}$", "$options": "i"}}
         )
         
         if existing_user:
             await pending_registration.delete()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Email or username already registered"
+                detail="Email already registered"
             )
         
         # Create the actual user account
         user = User(
             email=pending_registration.email,
-            username=pending_registration.username,
+            name=pending_registration.name,
             password_hash=pending_registration.password_hash,
             phone=pending_registration.phone,
+            country_code=pending_registration.country_code,
             status=UserStatus.ACTIVE  # Directly active since OTP is verified
         )
         
@@ -147,8 +146,8 @@ async def verify_otp(response: Response, otp_data: VerifyOTP):
         await pending_registration.delete()
         
     else:
-        # Check if it's an existing user (password reset, etc.)
-        user = await User.find_one({"email": otp_data.email})
+        # Check if it's an existing user (password reset, etc.) - case-insensitive
+        user = await User.find_one({"email": {"$regex": f"^{otp_data.email}$", "$options": "i"}})
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -205,8 +204,9 @@ async def verify_otp(response: Response, otp_data: VerifyOTP):
     user_response = UserResponse(
         id=str(user.id),
         email=user.email,
-        username=user.username,
+        name=user.name,
         phone=user.phone,
+        country_code=user.country_code,
         status=user.status,
         created_at=user.created_at
     )
@@ -218,13 +218,10 @@ async def verify_otp(response: Response, otp_data: VerifyOTP):
 async def login(request: Request, response: Response, login_data: UserLogin):
     """Login user"""
     
-    # Find user by email or username
-    user = await User.find_one({
-        "$or": [
-            {"email": login_data.login},
-            {"username": login_data.login}
-        ]
-    })
+    # Find user by email (case-insensitive)
+    user = await User.find_one(
+        {"email": {"$regex": f"^{login_data.email}$", "$options": "i"}}
+    )
     
     if not user or not verify_password(login_data.password, user.password_hash):
         raise HTTPException(
@@ -268,8 +265,9 @@ async def login(request: Request, response: Response, login_data: UserLogin):
     user_response = UserResponse(
         id=str(user.id),
         email=user.email,
-        username=user.username,
+        name=user.name,
         phone=user.phone,
+        country_code=user.country_code,
         status=user.status,
         created_at=user.created_at
     )
@@ -320,8 +318,9 @@ async def refresh_token(request: Request, response: Response):
     user_response = UserResponse(
         id=str(user.id),
         email=user.email,
-        username=user.username,
+        name=user.name,
         phone=user.phone,
+        country_code=user.country_code,
         status=user.status,
         created_at=user.created_at
     )
@@ -350,7 +349,8 @@ async def logout(request: Request, response: Response, current_user: User = Depe
 async def reset_password_request(request: Request, reset_data: ResetPasswordRequest):
     """Request password reset"""
     
-    user = await User.find_one({"email": reset_data.email})
+    # Case-insensitive email lookup
+    user = await User.find_one({"email": {"$regex": f"^{reset_data.email}$", "$options": "i"}})
     if not user:
         # Don't reveal if email exists or not
         return {"message": "If the email exists, a reset code has been sent."}
@@ -379,7 +379,8 @@ async def reset_password(reset_data: ResetPassword):
             detail="Password must be at least 8 characters with uppercase, lowercase, number, and special character"
         )
     
-    user = await User.find_one({"email": reset_data.email})
+    # Case-insensitive email lookup
+    user = await User.find_one({"email": {"$regex": f"^{reset_data.email}$", "$options": "i"}})
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -437,20 +438,17 @@ async def update_profile(profile_data: UpdateProfile, current_user: User = Depen
         current_user.password_hash = get_password_hash(profile_data.new_password)
         current_user.refresh_tokens = []  # Invalidate all refresh tokens
     
-    # Update username if provided
-    if profile_data.username and profile_data.username != current_user.username:
-        # Check if username is already taken
-        existing_user = await User.find_one({"username": profile_data.username})
-        if existing_user and str(existing_user.id) != str(current_user.id):
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Username already taken"
-            )
-        current_user.username = profile_data.username
+    # Update name if provided
+    if profile_data.name and profile_data.name != current_user.name:
+        current_user.name = profile_data.name
     
     # Update phone if provided
     if profile_data.phone:
         current_user.phone = profile_data.phone
+    
+    # Update country code if provided
+    if profile_data.country_code:
+        current_user.country_code = profile_data.country_code
     
     current_user.updated_at = datetime.utcnow()
     await current_user.save()
@@ -458,8 +456,9 @@ async def update_profile(profile_data: UpdateProfile, current_user: User = Depen
     return UserResponse(
         id=str(current_user.id),
         email=current_user.email,
-        username=current_user.username,
+        name=current_user.name,
         phone=current_user.phone,
+        country_code=current_user.country_code,
         status=current_user.status,
         created_at=current_user.created_at
     )
@@ -470,8 +469,9 @@ async def get_current_user_info(current_user: User = Depends(get_current_active_
     return UserResponse(
         id=str(current_user.id),
         email=current_user.email,
-        username=current_user.username,
+        name=current_user.name,
         phone=current_user.phone,
+        country_code=current_user.country_code,
         status=current_user.status,
         created_at=current_user.created_at
     )

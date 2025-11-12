@@ -106,7 +106,7 @@ class PricingBreakdown(BaseModel):
     currency: str = "INR"
 
 class Booking(Document):
-    booking_reference: Indexed(str, unique=True)
+    booking_reference: Indexed(str, unique=True) = Field(default="")
     user_id: Optional[str] = None
     guest_details: GuestDetails
     additional_guests: List[GuestDetails] = Field(default_factory=list)
@@ -126,7 +126,7 @@ class Booking(Document):
     
     @validator('booking_reference', pre=True, always=True)
     def generate_booking_reference(cls, v):
-        if not v:
+        if not v or v == "":
             return f"EH{datetime.now().year}{uuid.uuid4().hex[:8].upper()}"
         return v
     

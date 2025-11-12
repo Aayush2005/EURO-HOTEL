@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Eye, EyeOff, Mail, User, Phone, Lock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'react-hot-toast';
+import CountryCodeDropdown from '@/components/ui/CountryCodeDropdown';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -44,16 +45,26 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
 
   const [formData, setFormData] = useState({
     email: '',
-    username: '',
+    name: '',
     password: '',
     phone: '',
-    login: '',
     otp_code: '',
     new_password: '',
+    confirm_password: '',
   });
 
+  const [countryCode, setCountryCode] = useState('+91');
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    
+    // For phone number, only allow digits
+    if (name === 'phone') {
+      const digitsOnly = value.replace(/\D/g, '');
+      setFormData({ ...formData, [name]: digitsOnly });
+    } else {
+      setFormData({ ...formData, [name]: value });
+    }
   };
 
   const validatePassword = (password: string) => {
@@ -73,7 +84,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     try {
       switch (mode) {
         case 'login':
-          await login({ login: formData.login, password: formData.password });
+          await login({ email: formData.email, password: formData.password });
           toast.success('Welcome back!');
           onClose();
           break;
@@ -83,11 +94,20 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             toast.error('Password must be at least 8 characters with uppercase, lowercase, number, and special character');
             return;
           }
+          if (formData.password !== formData.confirm_password) {
+            toast.error('Passwords do not match. Please re-enter.');
+            return;
+          }
+          if (!formData.phone || formData.phone.length < 7) {
+            toast.error('Please enter a valid phone number');
+            return;
+          }
           await register({
             email: formData.email,
-            username: formData.username,
+            name: formData.name,
             password: formData.password,
-            phone: formData.phone,
+            phone: phoneNumber,
+            country_code: countryCode,
           });
           setEmail(formData.email);
           setMode('otp');
@@ -112,6 +132,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             toast.error('Password must be at least 8 characters with uppercase, lowercase, number, and special character');
             return;
           }
+          if (formData.new_password !== formData.confirm_password) {
+            toast.error('Passwords do not match. Please re-enter.');
+            return;
+          }
           await resetPassword({
             email: email || formData.email,
             otp_code: formData.otp_code,
@@ -131,15 +155,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const resetForm = () => {
     setFormData({
       email: '',
-      username: '',
+      name: '',
       password: '',
       phone: '',
-      login: '',
       otp_code: '',
       new_password: '',
+      confirm_password: '',
     });
     setEmail('');
     setShowPassword(false);
+    setCountryCode('+91');
   };
 
   const handleClose = () => {
@@ -211,17 +236,17 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                 <>
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-charcoal-700">
-                      Email or Username
+                      Email
                     </label>
                     <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
+                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
                       <input
-                        type="text"
-                        name="login"
-                        value={formData.login}
+                        type="email"
+                        name="email"
+                        value={formData.email}
                         onChange={handleInputChange}
                         className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        placeholder="Enter email or username"
+                        placeholder="Enter your email"
                         required
                       />
                     </div>
@@ -279,37 +304,70 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">Username</label>
+                    <label className="block text-sm font-medium text-charcoal-700">Full Name</label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
                       <input
                         type="text"
-                        name="username"
-                        value={formData.username}
+                        name="name"
+                        value={formData.name}
                         onChange={handleInputChange}
                         className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        placeholder="Choose username"
-                        pattern="^[a-zA-Z0-9_]+$"
-                        minLength={3}
-                        maxLength={20}
+                        placeholder="Enter your full name"
+                        minLength={2}
+                        maxLength={100}
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">Phone</label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
-                      <input
-                        type="tel"
-                        name="phone"
-                        value={formData.phone}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        placeholder="+1234567890"
-                        required
+                    <label className="block text-sm font-medium text-charcoal-700">Phone Number</label>
+                    <div className="flex gap-2">
+                      <CountryCodeDropdown
+                        value={countryCode}
+                        onChange={setCountryCode}
+                        className="flex-shrink-0"
                       />
+                      <div className="relative flex-1">
+                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
+                        <input
+                          type="tel"
+                          name="phone"
+                          value={formData.phone}
+                          onChange={handleInputChange}
+                          onKeyDown={(e) => {
+                            // Allow backspace, delete, tab, escape, enter, and arrow keys
+                            if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode) ||
+                                // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                                (e.keyCode === 65 && e.ctrlKey) ||
+                                (e.keyCode === 67 && e.ctrlKey) ||
+                                (e.keyCode === 86 && e.ctrlKey) ||
+                                (e.keyCode === 88 && e.ctrlKey)) {
+                              return;
+                            }
+                            // Ensure that it is a number and stop the keypress
+                            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+                              e.preventDefault();
+                            }
+                          }}
+                          className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                          placeholder="1234567890"
+                          minLength={7}
+                          maxLength={15}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <p className="text-xs text-charcoal-600">
+                        Enter digits only (no spaces or special characters)
+                      </p>
+                      {formData.phone && (
+                        <p className="text-xs text-gold-600 font-medium">
+                          Full number: {countryCode}{formData.phone}
+                        </p>
+                      )}
                     </div>
                   </div>
 
@@ -339,6 +397,31 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                     <p className="text-xs text-charcoal-600">
                       Must be 8+ characters with uppercase, lowercase, number, and special character
                     </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-charcoal-700">Confirm Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        name="confirm_password"
+                        value={formData.confirm_password}
+                        onChange={handleInputChange}
+                        className="w-full pl-10 pr-12 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                        placeholder="Confirm password"
+                        minLength={8}
+                        maxLength={128}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-charcoal-600"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
                   </div>
                 </>
               )}
@@ -407,6 +490,34 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                         onChange={handleInputChange}
                         className="w-full pl-10 pr-12 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
                         placeholder="Enter new password"
+                        minLength={8}
+                        maxLength={128}
+                        required
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-charcoal-600"
+                      >
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
+                    </div>
+                    <p className="text-xs text-charcoal-600">
+                      Must be 8+ characters with uppercase, lowercase, number, and special character
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-charcoal-700">Confirm New Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        name="confirm_password"
+                        value={formData.confirm_password}
+                        onChange={handleInputChange}
+                        className="w-full pl-10 pr-12 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                        placeholder="Confirm new password"
                         minLength={8}
                         maxLength={128}
                         required

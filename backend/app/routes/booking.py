@@ -13,7 +13,7 @@ from app.models.booking import (
 )
 from beanie.operators import And
 from app.services.booking_service import BookingService
-from app.auth import get_current_user, get_current_active_user
+from app.auth import get_current_user, get_current_user_optional, get_current_active_user
 from app.models.user import User
 import uuid
 import logging
@@ -200,7 +200,7 @@ async def check_booking_price(request: Request, price_request: PriceCheckRequest
 async def create_booking_hold(
     request: Request, 
     hold_request: BookingHoldRequest,
-    current_user: Optional[User] = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_current_user_optional)
 ):
     """Create a temporary booking hold"""
     try:
@@ -234,7 +234,7 @@ async def create_booking_hold(
 @router.post("/bookings/confirm", response_model=BookingResponse)
 async def confirm_booking(
     confirm_request: BookingConfirmRequest,
-    current_user: Optional[User] = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_current_user_optional)
 ):
     """Confirm a booking hold"""
     try:
@@ -265,7 +265,7 @@ async def confirm_booking(
 async def cancel_booking(
     booking_id: str,
     reason: str = "User cancelled",
-    current_user: Optional[User] = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_current_user_optional)
 ):
     """Cancel a booking"""
     try:
@@ -298,7 +298,7 @@ async def cancel_booking(
 @router.get("/bookings/{booking_id}", response_model=BookingResponse)
 async def get_booking_details(
     booking_id: str,
-    current_user: Optional[User] = Depends(get_current_user)
+    current_user: Optional[User] = Depends(get_current_user_optional)
 ):
     """Get booking details"""
     try:

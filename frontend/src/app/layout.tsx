@@ -2,7 +2,9 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import { Toaster } from "react-hot-toast";
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -32,9 +34,13 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <AuthProvider>
-          {children}
+          <AuthModalProvider>
+            {children}
           <Toaster
             position="top-right"
+            containerStyle={{
+              zIndex: 100002,
+            }}
             toastOptions={{
               duration: 4000,
               style: {
@@ -43,6 +49,7 @@ export default function RootLayout({
                 border: '1px solid #F0EDE8',
                 borderRadius: '8px',
                 fontFamily: 'Inter, sans-serif',
+                zIndex: 100002,
               },
               success: {
                 iconTheme: {
@@ -58,6 +65,7 @@ export default function RootLayout({
               },
             }}
           />
+          </AuthModalProvider>
         </AuthProvider>
       </body>
     </html>

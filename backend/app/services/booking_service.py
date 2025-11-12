@@ -167,10 +167,25 @@ class BookingService:
         )
         if existing_booking:
             if existing_booking.hold_expires_at and existing_booking.hold_expires_at > datetime.utcnow():
+                # Ensure booking_reference is generated for existing booking
+                if not existing_booking.booking_reference:
+                    existing_booking.booking_reference = f"EH{datetime.now().year}{uuid.uuid4().hex[:8].upper()}"
+                    await existing_booking.save()
+                
                 return {
                     "hold_token": str(existing_booking.id),
-                    "expires_at": existing_booking.hold_expires_at,
-                    "booking": BookingResponse.from_orm(existing_booking)
+                    "expires_at": existing_booking.hold_expires_at.isoformat() + "Z" if existing_booking.hold_expires_at else None,
+                    "booking": BookingResponse(
+                        id=str(existing_booking.id),
+                        booking_reference=existing_booking.booking_reference,
+                        status=existing_booking.status,
+                        payment_status=existing_booking.payment_status,
+                        guest_details=existing_booking.guest_details,
+                        room_bookings=existing_booking.room_bookings,
+                        pricing=existing_booking.pricing,
+                        created_at=existing_booking.created_at,
+                        hold_expires_at=existing_booking.hold_expires_at
+                    )
                 }
             else:
                 raise ValueError("Hold expired or booking already processed")
@@ -224,55 +239,56 @@ class BookingService:
             hold_expires_at=hold_expires_at
         )
         
-        # Use transaction to create booking and lock inventory
-        async with await Booking.get_motor_client().start_session() as session:
-            async with session.start_transaction():
-                # Save booking
-                await booking.insert(session=session)
-                
-                # Lock inventory for each date
-                current_date = request.start_date
-                while current_date < request.end_date:
-                    # Get or create inventory record
-                    inventory = await RoomInventory.find_one(
-                        And(
-                            RoomInventory.room_id == request.room_id,
-                            RoomInventory.date == current_date
-                        ),
-                        session=session
-                    )
-                    
-                    if inventory:
-                        inventory.locked_count += 1
-                        await inventory.save(session=session)
-                    else:
-                        # Create new inventory record
-                        room = await Room.get(request.room_id, session=session)
-                        total_rooms = room.metadata.get("total_rooms", 1)
-                        
-                        new_inventory = RoomInventory(
-                            room_id=request.room_id,
-                            date=current_date,
-                            available_count=total_rooms,
-                            locked_count=1
-                        )
-                        await new_inventory.insert(session=session)
-                    
-                    current_date += timedelta(days=1)
-                
-                # Log the action
-                audit_log = AuditLog(
-                    actor="system",
-                    action="booking_hold_created",
-                    resource="booking",
-                    resource_id=str(booking.id),
-                    after=booking.dict()
+        # Save booking (simplified without transaction for now)
+        await booking.insert()
+        
+        # Lock inventory for each date
+        current_date = request.start_date
+        while current_date < request.end_date:
+            # Get or create inventory record
+            inventory = await RoomInventory.find_one(
+                And(
+                    RoomInventory.room_id == request.room_id,
+                    RoomInventory.date == current_date
                 )
-                await audit_log.insert(session=session)
+            )
+            
+            if inventory:
+                inventory.locked_count += 1
+                await inventory.save()
+            else:
+                # Create new inventory record
+                room = await Room.get(request.room_id)
+                total_rooms = room.metadata.get("total_rooms", 1)
+                
+                new_inventory = RoomInventory(
+                    room_id=request.room_id,
+                    date=current_date,
+                    available_count=total_rooms,
+                    locked_count=1
+                )
+                await new_inventory.insert()
+            
+            current_date += timedelta(days=1)
+        
+        # Log the action
+        audit_log = AuditLog(
+            actor="system",
+            action="booking_hold_created",
+            resource="booking",
+            resource_id=str(booking.id),
+            after=booking.dict()
+        )
+        await audit_log.insert()
+        
+        # Ensure booking_reference is generated
+        if not booking.booking_reference:
+            booking.booking_reference = f"EH{datetime.now().year}{uuid.uuid4().hex[:8].upper()}"
+            await booking.save()
         
         return {
             "hold_token": str(booking.id),
-            "expires_at": hold_expires_at,
+            "expires_at": hold_expires_at.isoformat() + "Z",
             "booking": BookingResponse(
                 id=str(booking.id),
                 booking_reference=booking.booking_reference,

@@ -63,7 +63,7 @@ async def get_rooms(
                 "bed_configuration": room.bed_configuration,
                 "room_size": room.room_size,
                 "view": room.view,
-                "available": True  # For now, assume all rooms are available
+                "available": True
             }
             rooms_data.append(room_dict)
         

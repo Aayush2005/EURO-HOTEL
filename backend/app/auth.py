@@ -21,16 +21,10 @@ security = HTTPBearer(auto_error=False)
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verify a password against its hash"""
-    # Bcrypt has a 72 byte limit, so we truncate if necessary
-    if len(plain_password.encode('utf-8')) > 72:
-        plain_password = plain_password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
     return pwd_context.verify(plain_password, hashed_password)
 
 def get_password_hash(password: str) -> str:
     """Hash a password"""
-    # Bcrypt has a 72 byte limit, so we truncate if necessary
-    if len(password.encode('utf-8')) > 72:
-        password = password.encode('utf-8')[:72].decode('utf-8', errors='ignore')
     return pwd_context.hash(password)
 
 def validate_password_strength(password: str) -> bool:
@@ -131,6 +125,40 @@ async def get_current_user(
             detail="Account not active",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    return user
+
+async def get_current_user_optional(
+    request: Request,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
+) -> Optional[User]:
+    """Get current authenticated user from JWT token (optional)"""
+    
+    # Try to get token from Authorization header first
+    token = None
+    if credentials:
+        token = credentials.credentials
+    
+    # If no Authorization header, try to get from cookies
+    if not token:
+        token = request.cookies.get("access_token")
+    
+    if not token:
+        return None
+    
+    # Verify token
+    payload = verify_token(token, settings.jwt_secret_key)
+    if not payload or payload.get("type") != "access":
+        return None
+    
+    user_id: str = payload.get("sub")
+    if user_id is None:
+        return None
+    
+    # Get user from database
+    user = await User.get(user_id)
+    if user is None or user.status != UserStatus.ACTIVE:
+        return None
     
     return user
 

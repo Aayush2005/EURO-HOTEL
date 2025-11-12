@@ -143,7 +143,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadingComplete }) => {
             </motion.div>
 
             {/* Welcome Text */}
-            <motion.div
+            {/* <motion.div
               className="mb-16"
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -157,7 +157,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoadingComplete }) => {
                  style={{ textShadow: '0 2px 10px rgba(0,0,0,0.6)' }}>
                 Where Luxury Meets Heritage
               </p>
-            </motion.div>
+            </motion.div> */}
 
             {/* Orbital Loader */}
             <motion.div

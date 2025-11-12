@@ -44,87 +44,7 @@ interface Room {
 }
 
 
-const STATIC_ROOMS: Room[] = [
-  {
-    id: "1",
-    slug: "deluxe-heritage-room",
-    title: "Deluxe Heritage Room",
-    description: "Experience the grandeur of Hyderabadi royalty in our spacious Deluxe Heritage Suite. Featuring traditional décor with modern amenities, this suite offers a perfect blend of luxury and comfort.",
-    room_type: "suite",
-    amenities: [
-      "Free Wi-Fi", "Air Conditioning", "Mini Bar", "Room Service", 
-      "Flat Screen TV", "Private Bathroom", "Balcony with City View", 
-      "Coffee/Tea Maker", "Safe", "Telephone"
-    ],
-    images: [],
-    base_price: 8500,
-    max_occupancy: 4,
-    bed_configuration: "1 King Bed + 1 Sofa Bed",
-    room_size: "45 sqm",
-    floor: "3rd Floor",
-    view: "City View",
-    cancellation_policy: "free_24h"
-  },
-  {
-    id: "2",
-    slug: "presidential-suite",
-    title: "Presidential Suite",
-    description: "The epitome of luxury, our Royal Presidential Suite offers unparalleled elegance and space. Perfect for special occasions and VIP guests seeking the ultimate in comfort and prestige.",
-    room_type: "presidential",
-    amenities: [
-      "Free Wi-Fi", "Air Conditioning", "Mini Bar", "24/7 Room Service", 
-      "Smart TV", "Marble Bathroom", "Private Terrace", "Espresso Machine", 
-      "Personal Safe", "Telephone", "Butler Service", "Jacuzzi"
-    ],
-    images: [],
-    base_price: 15000,
-    max_occupancy: 6,
-    bed_configuration: "1 King Bed + 2 Single Beds",
-    room_size: "80 sqm",
-    floor: "Top Floor",
-    view: "Panoramic City View",
-    cancellation_policy: "flexible"
-  },
-  {
-    id: "3",
-    slug: "heritage-suite",
-    title: "Heritage Suite",
-    description: "Our Classic Deluxe Room combines traditional Hyderabadi hospitality with contemporary comfort. Ideal for business travelers and couples seeking a refined stay experience.",
-    room_type: "deluxe",
-    amenities: [
-      "Free Wi-Fi", "Air Conditioning", "Mini Fridge", "Room Service", 
-      "LED TV", "Private Bathroom", "Work Desk", "Coffee/Tea Maker", 
-      "Safe", "Telephone"
-    ],
-    images: [],
-    base_price: 5500,
-    max_occupancy: 3,
-    bed_configuration: "1 Queen Bed",
-    room_size: "30 sqm",
-    floor: "2nd Floor",
-    view: "Garden View",
-    cancellation_policy: "free_24h"
-  },
-  {
-    id: "4",
-    slug: "standard-heritage-room",
-    title: "Standard Heritage Room",
-    description: "Perfect for budget-conscious travelers, our Standard Comfort Room offers all essential amenities with the signature Euro Hotel hospitality and service excellence.",
-    room_type: "standard",
-    amenities: [
-      "Free Wi-Fi", "Air Conditioning", "Room Service", "TV", 
-      "Private Bathroom", "Work Desk", "Coffee/Tea Maker", "Telephone"
-    ],
-    images: [],
-    base_price: 3500,
-    max_occupancy: 2,
-    bed_configuration: "1 Double Bed",
-    room_size: "25 sqm",
-    floor: "1st Floor",
-    view: "Street View",
-    cancellation_policy: "free_24h"
-  }
-];
+
 
 
 const getRoomImages = (roomType: string) => {
@@ -172,21 +92,14 @@ export default function RoomDetailsPage() {
           roomData.images = getRoomImages(roomData.room_type);
           setRoom(roomData);
         } else {
-          // Fallback to static data if API fails
-          const foundRoom = STATIC_ROOMS.find(r => r.slug === slug);
-          if (foundRoom) {
-            foundRoom.images = getRoomImages(foundRoom.room_type);
-            setRoom(foundRoom);
-          }
+          console.error('Failed to fetch room:', response.status);
+          const errorText = await response.text();
+          console.error('Error response:', errorText);
+          setRoom(null);
         }
       } catch (error) {
         console.error('Error fetching room:', error);
-        // Fallback to static data
-        const foundRoom = STATIC_ROOMS.find(r => r.slug === slug);
-        if (foundRoom) {
-          foundRoom.images = getRoomImages(foundRoom.room_type);
-          setRoom(foundRoom);
-        }
+        setRoom(null);
       } finally {
         setLoading(false);
       }
@@ -317,7 +230,7 @@ export default function RoomDetailsPage() {
     );
   }
 
-  if (!room) {
+  if (!room && !loading) {
     return (
       <div className="min-h-screen bg-off-white">
         <SolidHeader />
@@ -327,14 +240,22 @@ export default function RoomDetailsPage() {
               Room Not Found
             </h1>
             <p className="text-charcoal-600 mb-8">
-              The room you're looking for doesn't exist or has been removed.
+              The room you're looking for doesn't exist or couldn't be loaded. Please check the URL or try again later.
             </p>
-            <button
-              onClick={() => window.history.back()}
-              className="btn-gold"
-            >
-              Go Back
-            </button>
+            <div className="space-x-4">
+              <button
+                onClick={() => window.history.back()}
+                className="btn-outline-gold"
+              >
+                Go Back
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="btn-gold"
+              >
+                Retry
+              </button>
+            </div>
           </div>
         </div>
         <Footer />

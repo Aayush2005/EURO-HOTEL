@@ -6,18 +6,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { User, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useAuthModal } from '@/contexts/AuthModalContext';
 import AuthModal from '@/components/auth/AuthModal';
 import ProfileModal from '@/components/auth/ProfileModal';
 import { useClickOutside } from '@/hooks/useClickOutside';
 
 const SolidHeader = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [showUserMenu, setShowUserMenu] = useState(false);
 
   const { user, isAuthenticated, logout } = useAuth();
+  const { isAuthModalOpen, authMode, openAuthModal, closeAuthModal } = useAuthModal();
   const userMenuRef = useClickOutside(() => setShowUserMenu(false));
 
   const menuVariants = {
@@ -104,7 +104,7 @@ const SolidHeader = () => {
                 className="flex items-center space-x-2 text-white hover:text-yellow-400 transition-colors font-medium"
               >
                 <User size={18} />
-                <span>{user?.username}</span>
+                <span>{user?.name?.split(' ')[0] || user?.name}</span>
               </motion.button>
 
               <AnimatePresence>
@@ -142,10 +142,7 @@ const SolidHeader = () => {
             </div>
           ) : (
             <motion.button
-              onClick={() => {
-                setAuthMode('login');
-                setIsAuthModalOpen(true);
-              }}
+              onClick={() => openAuthModal('login')}
               className="text-white hover:text-yellow-400 transition-colors font-medium"
             >
               Sign In
@@ -241,8 +238,7 @@ const SolidHeader = () => {
                 >
                   <button
                     onClick={() => {
-                      setAuthMode('login');
-                      setIsAuthModalOpen(true);
+                      openAuthModal('login');
                       setIsMenuOpen(false);
                     }}
                     className="block text-white hover:text-yellow-400 transition-colors py-3 font-medium tracking-wide"
@@ -268,7 +264,7 @@ const SolidHeader = () => {
                       }}
                       className="block text-white hover:text-yellow-400 transition-colors py-3 font-medium tracking-wide"
                     >
-                      PROFILE ({user?.username})
+                      PROFILE ({user?.name?.split(' ')[0] || user?.name})
                     </button>
                   </motion.div>
 
@@ -315,7 +311,7 @@ const SolidHeader = () => {
       {/* Auth Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
-        onClose={() => setIsAuthModalOpen(false)}
+        onClose={closeAuthModal}
         initialMode={authMode}
       />
 

@@ -1,8 +1,8 @@
 // Configuration for managing page availability
 export const PAGE_CONFIG = {
   // Set to true to disable the page, false to enable
-  EVENTS_DISABLED: true,
-  ROOM_DETAILS_DISABLED: true,
+  EVENTS_DISABLED: false,
+  ROOM_DETAILS_DISABLED: false,
   
   // Messages to show when pages are disabled
   EVENTS_MESSAGE: "Our Events page is currently being updated with exciting new offerings. Please check back soon!",

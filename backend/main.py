@@ -6,6 +6,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from contextlib import asynccontextmanager
 import logging
+import asyncio
 
 from app.database import connect_to_mongo, close_mongo_connection
 from app.routes.auth import router as auth_router, limiter
@@ -14,6 +15,7 @@ from app.routes.payment import router as payment_router
 from app.routes.admin import router as admin_router
 from app.routes.rooms import router as rooms_router
 from app.config import settings
+from app.tasks import cleanup_expired_pending_registrations
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -25,9 +27,20 @@ async def lifespan(app: FastAPI):
     logger.info("Starting up...")
     await connect_to_mongo()
     logger.info("Connected to MongoDB")
+    
+    # Start background cleanup task
+    cleanup_task = asyncio.create_task(cleanup_expired_pending_registrations())
+    logger.info("Started background cleanup task for pending registrations")
+    
     yield
+    
     # Shutdown
     logger.info("Shutting down...")
+    cleanup_task.cancel()
+    try:
+        await cleanup_task
+    except asyncio.CancelledError:
+        logger.info("Cleanup task cancelled")
     await close_mongo_connection()
     logger.info("Disconnected from MongoDB")
 

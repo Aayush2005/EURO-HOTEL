@@ -141,6 +141,34 @@ html {
   z-index: 99999 !important;
 }
 
+/* Profile Modal Styles */
+.profile-modal-container {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 99999 !important;
+  backdrop-filter: none !important;
+  isolation: isolate;
+}
+
+.profile-modal-backdrop {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  z-index: 99998 !important;
+  background: rgba(11, 29, 58, 0.8) !important;
+  backdrop-filter: blur(8px) !important;
+}
+
+.profile-modal-content {
+  position: relative !important;
+  z-index: 99999 !important;
+}
+
 /* Premium Card Styles */
 .premium-card {
   background: var(--off-white);
@@ -156,6 +184,13 @@ html {
 }
 
 /* Z-Index Layers */
+/* Layer hierarchy:
+   - Modal backdrop: 99997
+   - Modal content: 99998
+   - Auth/Profile modals: 99999
+   - Loading screen: 100001
+   - Toast notifications: 100002 (always on top)
+*/
 .z-modal-backdrop {
   z-index: 99997;
 }
@@ -170,6 +205,10 @@ html {
 
 .z-loading {
   z-index: 100001;
+}
+
+.z-toast {
+  z-index: 100002;
 }
 
 /* Ensure modals are always on top */

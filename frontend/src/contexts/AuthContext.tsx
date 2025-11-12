@@ -5,8 +5,9 @@ import React, { createContext, useContext, useEffect, useState, ReactNode } from
 interface User {
   id: string;
   email: string;
-  username: string;
+  name: string;
   phone: string;
+  country_code: string;
   status: string;
   created_at: string;
 }
@@ -15,8 +16,8 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (loginData: { login: string; password: string }) => Promise<void>;
-  register: (registerData: { email: string; username: string; password: string; phone: string }) => Promise<void>;
+  login: (loginData: { email: string; password: string }) => Promise<void>;
+  register: (registerData: { email: string; name: string; password: string; phone: string; country_code: string }) => Promise<void>;
   verifyOTP: (otpData: { email: string; otp_code: string }) => Promise<void>;
   logout: () => Promise<void>;
   resetPasswordRequest: (email: string) => Promise<void>;
@@ -75,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const login = async (loginData: { login: string; password: string }) => {
+  const login = async (loginData: { email: string; password: string }) => {
     const data = await apiCall('/auth/login', {
       method: 'POST',
       body: JSON.stringify(loginData),
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(data.user);
   };
 
-  const register = async (registerData: { email: string; username: string; password: string; phone: string }) => {
+  const register = async (registerData: { email: string; name: string; password: string; phone: string }) => {
     await apiCall('/auth/register', {
       method: 'POST',
       body: JSON.stringify(registerData),

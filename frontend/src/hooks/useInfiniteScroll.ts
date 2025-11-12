@@ -68,7 +68,7 @@ export const useProgressiveLoading = <T>(
   const [isLoading, setIsLoading] = useState(false);
 
   const loadMoreItems = useCallback(() => {
-    if (currentIndex >= items.length) return;
+    if (isLoading || currentIndex >= items.length) return;
 
     setIsLoading(true);
     
@@ -80,13 +80,21 @@ export const useProgressiveLoading = <T>(
       setCurrentIndex(nextIndex);
       setIsLoading(false);
     }, delay);
-  }, [items, currentIndex, itemsPerBatch, delay]);
+  }, [currentIndex, items.length, itemsPerBatch, delay, isLoading]);
 
+  // Reset and load initial items when items array changes
   useEffect(() => {
-    if (items.length > 0 && visibleItems.length === 0) {
-      loadMoreItems();
+    setVisibleItems([]);
+    setCurrentIndex(0);
+    setIsLoading(false);
+    
+    if (items.length > 0) {
+      // Load initial batch immediately
+      const initialBatch = items.slice(0, Math.min(itemsPerBatch, items.length));
+      setVisibleItems(initialBatch);
+      setCurrentIndex(Math.min(itemsPerBatch, items.length));
     }
-  }, [items, visibleItems.length, loadMoreItems]);
+  }, [items, itemsPerBatch]);
 
   const hasMore = currentIndex < items.length;
 
@@ -98,6 +106,7 @@ export const useProgressiveLoading = <T>(
     reset: () => {
       setVisibleItems([]);
       setCurrentIndex(0);
+      setIsLoading(false);
     }
   };
 };
