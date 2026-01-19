@@ -72,15 +72,15 @@ const Footer = () => {
             <div className="space-y-4 text-gray-300 font-light">
               <div>
                 <p className="font-medium text-white mb-1">Address</p>
-                <p>Central Business District<br />Hyderabad, Telangana 500002</p>
+                <p>Opp post office Mumbai highway<br />Rudraram village Patancheru Mandal<br />Sangareddy Dist Telangana 502329</p>
               </div>
               <div>
                 <p className="font-medium text-white mb-1">Reservations</p>
-                <p>+91 40 2345 6789</p>
+                <p>+91 77299 00091</p>
               </div>
               <div>
                 <p className="font-medium text-white mb-1">Email</p>
-                <p>reservations@eurohotel.in</p>
+                <p>rudraramreservations@eurohotel.in</p>
               </div>
             </div>
           </div>

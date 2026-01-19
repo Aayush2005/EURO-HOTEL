@@ -14,6 +14,7 @@ from app.models.booking import (
     RoomBookingDetails, PricingBreakdown
 )
 from app.config import settings
+from app.hotel_config import ADDITIONAL_CHARGES
 
 class BookingService:
     
@@ -24,13 +25,17 @@ class BookingService:
     
     @staticmethod
     def calculate_gst(amount: float) -> float:
-        """Calculate 18% GST on amount"""
-        return round(amount * 0.18, 2)
+        """Calculate GST based on Euro Hotel policy: 5% for rooms under ₹7500"""
+        gst_threshold = ADDITIONAL_CHARGES["gst_threshold"]
+        if amount < gst_threshold:
+            return round(amount * ADDITIONAL_CHARGES["gst_rate_under_threshold"], 2)
+        else:
+            return round(amount * ADDITIONAL_CHARGES["gst_rate_over_threshold"], 2)
     
     @staticmethod
     def calculate_service_charge(amount: float) -> float:
-        """Calculate 10% service charge on amount"""
-        return round(amount * 0.10, 2)
+        """No service charge for Euro Hotel - keeping for future use"""
+        return 0.0
     
     @staticmethod
     async def get_room_availability(
@@ -362,10 +367,10 @@ class BookingService:
         refund_amount = 0
         room = await Room.get(booking.room_bookings[0].room_id)
         
-        if room.cancellation_policy == CancellationPolicy.FREE_24H:
-            # Free cancellation if more than 24 hours before check-in
+        if room.cancellation_policy == CancellationPolicy.FREE_48H:
+            # Free cancellation if more than 48 hours before check-in
             checkin_datetime = datetime.combine(booking.room_bookings[0].start_date, datetime.min.time())
-            if datetime.utcnow() < checkin_datetime - timedelta(hours=24):
+            if datetime.utcnow() < checkin_datetime - timedelta(hours=48):
                 refund_amount = booking.pricing.total_amount
         elif room.cancellation_policy == CancellationPolicy.FLEXIBLE:
             # 50% refund for flexible policy

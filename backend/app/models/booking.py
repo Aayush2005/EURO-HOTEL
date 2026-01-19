@@ -6,10 +6,9 @@ from enum import Enum
 import uuid
 
 class RoomType(str, Enum):
-    STANDARD = "standard"
-    DELUXE = "deluxe"
-    SUITE = "suite"
-    PRESIDENTIAL = "presidential"
+    EH_DELUXE_HIGHWAY_VIEW = "eh_deluxe_highway_view"
+    EH_PREMIUM = "eh_premium"
+    EH_SUPERIOR = "eh_superior"
 
 class BookingStatus(str, Enum):
     PENDING = "pending"
@@ -28,7 +27,7 @@ class PaymentStatus(str, Enum):
     FAILED = "failed"
 
 class CancellationPolicy(str, Enum):
-    FREE_24H = "free_24h"
+    FREE_48H = "free_48h"  # 48 hours before checkin
     NON_REFUNDABLE = "non_refundable"
     FLEXIBLE = "flexible"
 
@@ -51,7 +50,7 @@ class Room(Document):
     room_size: str
     floor: str
     view: str
-    cancellation_policy: CancellationPolicy = CancellationPolicy.FREE_24H
+    cancellation_policy: CancellationPolicy = CancellationPolicy.FREE_48H
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     active: bool = True
