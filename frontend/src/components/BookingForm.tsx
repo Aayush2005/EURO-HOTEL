@@ -249,7 +249,7 @@ const BookingFormContent = () => {
               <div className="grid md:grid-cols-3 gap-6 text-center">
                 <div>
                   <div className="text-gold-600 font-semibold">Free Cancellation</div>
-                  <div className="text-sm text-charcoal-600">Up to 24 hours before check-in</div>
+                  <div className="text-sm text-charcoal-600">Up to 48 hours before check-in</div>
                 </div>
                 <div>
                   <div className="text-gold-600 font-semibold">Best Price Guarantee</div>

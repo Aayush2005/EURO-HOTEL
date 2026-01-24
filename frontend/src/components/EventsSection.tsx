@@ -20,10 +20,6 @@ const EventsSection = () => {
             <div className="space-y-4">
               <div className="flex items-center space-x-4">
                 <div className="w-3 h-3 bg-gold-600 rounded-full"></div>
-                <span className="text-charcoal-700 font-medium">Kitty Parties</span>
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="w-3 h-3 bg-gold-600 rounded-full"></div>
                 <span className="text-charcoal-700 font-medium">Outdoor Catering</span>
               </div>
               <div className="flex items-center space-x-4">
@@ -37,7 +33,7 @@ const EventsSection = () => {
             </div>
             
             {/* Venue Features */}
-            <div className="mt-8 pt-6 border-t border-gold-200">
+            {/* <div className="mt-8 pt-6 border-t border-gold-200">
               <h4 className="font-serif text-lg text-navy-900 mb-4">Our Venues</h4>
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
@@ -53,7 +49,7 @@ const EventsSection = () => {
                   <span className="text-charcoal-600 text-sm">Royal Garden Terrace</span>
                 </div>
               </div>
-            </div>
+            </div> */}
             
             <button className="btn-outline-gold">
               PLAN YOUR EVENT
@@ -109,7 +105,7 @@ const EventsSection = () => {
             </div>
             
             {/* Services Info */}
-            <div className="col-span-2 bg-navy-900 text-white p-6 rounded-xl flex justify-around items-center">
+            <div className="col-span-2 bg-navy-900 text-white p-6 rounded-xl flex justify-around items-center shadow-lg" style={{ backgroundColor: '#0B1D3A' }}>
               <div className="text-center">
                 <div className="font-serif text-xl font-light text-yellow-400">24/7</div>
                 <div className="text-xs opacity-80">Event Support</div>

@@ -58,10 +58,10 @@ const Footer = () => {
           <div>
             <h3 className="font-serif text-xl font-medium mb-6 text-yellow-400">Explore</h3>
             <ul className="space-y-4">
-              <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">City Tours</a></li>
+              {/* <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">City Tours</a></li> */}
               <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">Comfort Suites</a></li>
               <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">Fine Dining</a></li>
-              <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">Spa & Wellness</a></li>
+              {/* <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">Spa & Wellness</a></li> */}
               <li><a href="#" className="text-gray-300 hover:text-yellow-400 transition-colors font-light">Events</a></li>
             </ul>
           </div>
@@ -88,7 +88,7 @@ const Footer = () => {
 
         {/* Bottom Bar */}
         <div className="border-t border-gray-700 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center text-gray-400">
-          <p className="font-light">&copy; 2025 Euro Hotel. All rights reserved.</p>
+          <p className="font-light">&copy; 2026 Euro Hotel. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
             <a href="#" className="hover:text-yellow-400 transition-colors font-light">Privacy Policy</a>
             <a href="#" className="hover:text-yellow-400 transition-colors font-light">Terms of Service</a>
