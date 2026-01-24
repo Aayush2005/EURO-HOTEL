@@ -266,8 +266,8 @@ const EventsPage = () => {
                     Events Department
                   </h3>
                   <div className="space-y-3 text-white opacity-90">
-                    <p>� +9t1 40 2345 6789</p>
-                    <p>📧 events@eurohotel.com</p>
+                    <p>� +91 77299 00091</p>
+                    <p>📧 rudraramreservations@eurohotel.in</p>
                     <p>🕒 Available 24/7</p>
                   </div>
                 </div>
