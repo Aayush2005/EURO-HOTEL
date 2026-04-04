@@ -1,18 +1,15 @@
 from datetime import datetime, timedelta, date
 from typing import List, Optional, Dict, Any
-from beanie import PydanticObjectId
-from beanie.operators import In, And, Or
-from motor.motor_asyncio import AsyncIOMotorClientSession
 import uuid
-import asyncio
 
 from app.models.booking import (
-    Room, RoomInventory, Booking, Payment, PromoCode, AuditLog,
+    RoomDB, BookingDB, PaymentDB, PromoCodeDB, AuditLogDB,
     BookingStatus, PaymentStatus, RoomType, CancellationPolicy,
     PriceCheckRequest, BookingHoldRequest, BookingConfirmRequest,
     PriceBreakdownResponse, BookingResponse, RoomResponse,
-    RoomBookingDetails, PricingBreakdown
+    RoomBookingDetails, PricingBreakdown, GuestDetails
 )
+from app.database import get_supabase
 from app.config import settings
 from app.hotel_config import ADDITIONAL_CHARGES
 
@@ -38,60 +35,55 @@ class BookingService:
         return 0.0
     
     @staticmethod
+    async def get_room_by_id(room_id: str) -> Optional[Dict]:
+        """Get room by ID"""
+        supabase = get_supabase()
+        result = supabase.table("rooms").select("*").eq("id", room_id).execute()
+        return result.data[0] if result.data else None
+    
+    @staticmethod
     async def get_room_availability(
         room_id: str, 
         start_date: date, 
         end_date: date
     ) -> Dict[str, Any]:
         """Check room availability for date range"""
-        try:
-            room = await Room.get(PydanticObjectId(room_id))
-        except Exception:
-            room = None
-        if not room or not room.active:
+        supabase = get_supabase()
+        
+        room = await BookingService.get_room_by_id(room_id)
+        if not room or not room.get("active", True):
             return {"available": False, "reason": "Room not found or inactive"}
         
         # Get all dates in range
         current_date = start_date
         dates_to_check = []
         while current_date < end_date:
-            dates_to_check.append(current_date)
+            dates_to_check.append(current_date.isoformat())
             current_date += timedelta(days=1)
         
         # Check inventory for each date
-        inventory_records = await RoomInventory.find(
-            And(
-                RoomInventory.room_id == room_id,
-                In(RoomInventory.date, dates_to_check)
-            )
-        ).to_list()
+        inventory_result = supabase.table("room_inventory").select("*").eq("room_id", room_id).in_("date", dates_to_check).execute()
         
         # Create inventory map
-        inventory_map = {inv.date: inv for inv in inventory_records}
+        inventory_map = {inv["date"]: inv for inv in inventory_result.data}
         
         # Check availability for each date
-        total_rooms = room.metadata.get("total_rooms", 1)
+        total_rooms = room.get("room_metadata", {}).get("total_rooms", 1)
         for check_date in dates_to_check:
             if check_date in inventory_map:
                 inv = inventory_map[check_date]
-                if inv.blocked_reason:
+                if inv.get("blocked_reason"):
                     return {"available": False, "reason": f"Room blocked on {check_date}"}
-                available = inv.available_count - inv.locked_count
+                available = inv["available_count"] - inv.get("locked_count", 0)
                 if available <= 0:
                     return {"available": False, "reason": f"No rooms available on {check_date}"}
-            else:
-                # No inventory record means all rooms available
-                pass
         
         return {"available": True, "total_rooms": total_rooms}
     
     @staticmethod
     async def calculate_pricing(request: PriceCheckRequest) -> PriceBreakdownResponse:
         """Calculate detailed pricing for booking request"""
-        try:
-            room = await Room.get(PydanticObjectId(request.room_id))
-        except Exception:
-            room = None
+        room = await BookingService.get_room_by_id(request.room_id)
         if not room:
             raise ValueError("Room not found")
         
@@ -117,34 +109,29 @@ class BookingService:
             )
         
         # Calculate base price
-        subtotal = room.base_price * nights
+        subtotal = room["base_price"] * nights
         
         # Apply promo code if provided
         discount_amount = 0
         if request.promo_code:
-            promo = await PromoCode.find_one(
-                And(
-                    PromoCode.code == request.promo_code.upper(),
-                    PromoCode.active == True,
-                    PromoCode.valid_from <= datetime.utcnow(),
-                    PromoCode.valid_until >= datetime.utcnow(),
-                    PromoCode.used_count < PromoCode.usage_limit
-                )
-            )
+            supabase = get_supabase()
+            now = datetime.utcnow().isoformat()
+            promo_result = supabase.table("promo_codes").select("*").eq("code", request.promo_code.upper()).eq("active", True).lte("valid_from", now).gte("valid_until", now).execute()
             
-            if promo and (
-                "all" in promo.applicable_room_types or 
-                room.room_type.value in promo.applicable_room_types
-            ):
-                if subtotal >= promo.min_amount:
-                    if promo.discount_type == "percentage":
-                        discount_amount = subtotal * (promo.discount_value / 100)
-                        if promo.max_discount:
-                            discount_amount = min(discount_amount, promo.max_discount)
-                    else:
-                        discount_amount = promo.discount_value
-                    
-                    discount_amount = round(discount_amount, 2)
+            if promo_result.data:
+                promo = promo_result.data[0]
+                if promo["used_count"] < promo["usage_limit"]:
+                    applicable_types = promo.get("applicable_room_types", ["all"])
+                    if "all" in applicable_types or room["room_type"] in applicable_types:
+                        if subtotal >= promo.get("min_amount", 0):
+                            if promo["discount_type"] == "percentage":
+                                discount_amount = subtotal * (promo["discount_value"] / 100)
+                                if promo.get("max_discount"):
+                                    discount_amount = min(discount_amount, promo["max_discount"])
+                            else:
+                                discount_amount = promo["discount_value"]
+                            
+                            discount_amount = round(discount_amount, 2)
         
         # Calculate final amounts
         discounted_subtotal = subtotal - discount_amount
@@ -166,34 +153,33 @@ class BookingService:
     @staticmethod
     async def create_booking_hold(request: BookingHoldRequest) -> Dict[str, Any]:
         """Create a temporary booking hold"""
+        supabase = get_supabase()
+        
         # Check if idempotency key already exists
-        existing_booking = await Booking.find_one(
-            Booking.idempotency_key == request.idempotency_key
-        )
-        if existing_booking:
-            if existing_booking.hold_expires_at and existing_booking.hold_expires_at > datetime.utcnow():
-                # Ensure booking_reference is generated for existing booking
-                if not existing_booking.booking_reference:
-                    existing_booking.booking_reference = f"EH{datetime.now().year}{uuid.uuid4().hex[:8].upper()}"
-                    await existing_booking.save()
-                
-                return {
-                    "hold_token": str(existing_booking.id),
-                    "expires_at": existing_booking.hold_expires_at.isoformat() + "Z" if existing_booking.hold_expires_at else None,
-                    "booking": BookingResponse(
-                        id=str(existing_booking.id),
-                        booking_reference=existing_booking.booking_reference,
-                        status=existing_booking.status,
-                        payment_status=existing_booking.payment_status,
-                        guest_details=existing_booking.guest_details,
-                        room_bookings=existing_booking.room_bookings,
-                        pricing=existing_booking.pricing,
-                        created_at=existing_booking.created_at,
-                        hold_expires_at=existing_booking.hold_expires_at
-                    )
-                }
-            else:
-                raise ValueError("Hold expired or booking already processed")
+        existing_result = supabase.table("bookings").select("*").eq("idempotency_key", request.idempotency_key).execute()
+        
+        if existing_result.data:
+            existing_booking = existing_result.data[0]
+            hold_expires = existing_booking.get("hold_expires_at")
+            if hold_expires:
+                hold_expires_dt = datetime.fromisoformat(hold_expires.replace("Z", "+00:00").replace("+00:00", ""))
+                if hold_expires_dt > datetime.utcnow():
+                    return {
+                        "hold_token": existing_booking["id"],
+                        "expires_at": hold_expires,
+                        "booking": BookingResponse(
+                            id=existing_booking["id"],
+                            booking_reference=existing_booking["booking_reference"],
+                            status=BookingStatus(existing_booking["status"]),
+                            payment_status=PaymentStatus(existing_booking["payment_status"]),
+                            guest_details=GuestDetails(**existing_booking["guest_details"]),
+                            room_bookings=[RoomBookingDetails(**rb) for rb in existing_booking["room_bookings"]],
+                            pricing=PricingBreakdown(**existing_booking["pricing"]),
+                            created_at=datetime.fromisoformat(existing_booking["created_at"].replace("Z", "")),
+                            hold_expires_at=hold_expires_dt
+                        )
+                    }
+            raise ValueError("Hold expired or booking already processed")
         
         # Calculate pricing
         price_request = PriceCheckRequest(
@@ -211,209 +197,242 @@ class BookingService:
         # Create booking with hold
         hold_expires_at = datetime.utcnow() + timedelta(minutes=15)
         nights = BookingService.calculate_nights(request.start_date, request.end_date)
+        booking_id = str(uuid.uuid4())
+        booking_reference = f"EH{datetime.now().year}{uuid.uuid4().hex[:8].upper()}"
+        now = datetime.utcnow().isoformat()
         
-        room_booking = RoomBookingDetails(
-            room_id=request.room_id,
-            start_date=request.start_date,
-            end_date=request.end_date,
-            nights=nights,
-            base_price=pricing.subtotal / nights,
-            final_price=pricing.subtotal
-        )
+        room_booking = {
+            "room_id": request.room_id,
+            "room_number": None,
+            "start_date": request.start_date.isoformat(),
+            "end_date": request.end_date.isoformat(),
+            "nights": nights,
+            "base_price": pricing.subtotal / nights,
+            "final_price": pricing.subtotal
+        }
         
-        pricing_breakdown = PricingBreakdown(
-            subtotal=pricing.subtotal,
-            gst=pricing.gst,
-            service_charge=pricing.service_charge,
-            discount_amount=pricing.discount_amount,
-            total_amount=pricing.total_amount,
-            currency=pricing.currency
-        )
+        pricing_breakdown = {
+            "subtotal": pricing.subtotal,
+            "gst": pricing.gst,
+            "service_charge": pricing.service_charge,
+            "discount_amount": pricing.discount_amount,
+            "total_amount": pricing.total_amount,
+            "currency": pricing.currency
+        }
         
-        booking = Booking(
-            user_id=None,  # Will be set if user is authenticated
-            guest_details=request.guest_details,
-            additional_guests=request.additional_guests,
-            room_bookings=[room_booking],
-            total_guests=request.guests,
-            special_requests=request.special_requests,
-            status=BookingStatus.PENDING,
-            pricing=pricing_breakdown,
-            payment_status=PaymentStatus.PENDING,
-            idempotency_key=request.idempotency_key,
-            hold_expires_at=hold_expires_at
-        )
+        booking_data = {
+            "id": booking_id,
+            "booking_reference": booking_reference,
+            "user_id": None,
+            "guest_details": request.guest_details.dict(),
+            "additional_guests": [g.dict() for g in request.additional_guests],
+            "room_bookings": [room_booking],
+            "total_guests": request.guests,
+            "special_requests": request.special_requests,
+            "status": BookingStatus.PENDING.value,
+            "pricing": pricing_breakdown,
+            "payment_status": PaymentStatus.PENDING.value,
+            "idempotency_key": request.idempotency_key,
+            "hold_expires_at": hold_expires_at.isoformat(),
+            "check_in_time": "14:00",
+            "check_out_time": "12:00",
+            "version": 1,
+            "created_at": now,
+            "updated_at": now
+        }
         
-        # Save booking (simplified without transaction for now)
-        await booking.insert()
+        # Save booking
+        result = supabase.table("bookings").insert(booking_data).execute()
+        
+        if not result.data:
+            raise ValueError("Failed to create booking")
         
         # Lock inventory for each date
         current_date = request.start_date
+        room = await BookingService.get_room_by_id(request.room_id)
+        total_rooms = room.get("room_metadata", {}).get("total_rooms", 1) if room else 1
+        
         while current_date < request.end_date:
-            # Get or create inventory record
-            inventory = await RoomInventory.find_one(
-                And(
-                    RoomInventory.room_id == request.room_id,
-                    RoomInventory.date == current_date
-                )
-            )
+            date_str = current_date.isoformat()
             
-            if inventory:
-                inventory.locked_count += 1
-                await inventory.save()
+            # Check if inventory exists
+            inv_result = supabase.table("room_inventory").select("*").eq("room_id", request.room_id).eq("date", date_str).execute()
+            
+            if inv_result.data:
+                # Update existing inventory
+                inv = inv_result.data[0]
+                supabase.table("room_inventory").update({
+                    "locked_count": inv.get("locked_count", 0) + 1,
+                    "updated_at": now
+                }).eq("id", inv["id"]).execute()
             else:
                 # Create new inventory record
-                room = await Room.get(request.room_id)
-                total_rooms = room.metadata.get("total_rooms", 1)
-                
-                new_inventory = RoomInventory(
-                    room_id=request.room_id,
-                    date=current_date,
-                    available_count=total_rooms,
-                    locked_count=1
-                )
-                await new_inventory.insert()
+                supabase.table("room_inventory").insert({
+                    "id": str(uuid.uuid4()),
+                    "room_id": request.room_id,
+                    "date": date_str,
+                    "available_count": total_rooms,
+                    "locked_count": 1,
+                    "created_at": now,
+                    "updated_at": now
+                }).execute()
             
             current_date += timedelta(days=1)
         
         # Log the action
-        audit_log = AuditLog(
-            actor="system",
-            action="booking_hold_created",
-            resource="booking",
-            resource_id=str(booking.id),
-            after=booking.dict()
-        )
-        await audit_log.insert()
-        
-        # Ensure booking_reference is generated
-        if not booking.booking_reference:
-            booking.booking_reference = f"EH{datetime.now().year}{uuid.uuid4().hex[:8].upper()}"
-            await booking.save()
+        supabase.table("audit_logs").insert({
+            "id": str(uuid.uuid4()),
+            "actor": "system",
+            "action": "booking_hold_created",
+            "resource": "booking",
+            "resource_id": booking_id,
+            "after": booking_data,
+            "timestamp": now
+        }).execute()
         
         return {
-            "hold_token": str(booking.id),
+            "hold_token": booking_id,
             "expires_at": hold_expires_at.isoformat() + "Z",
             "booking": BookingResponse(
-                id=str(booking.id),
-                booking_reference=booking.booking_reference,
-                status=booking.status,
-                payment_status=booking.payment_status,
-                guest_details=booking.guest_details,
-                room_bookings=booking.room_bookings,
-                pricing=booking.pricing,
-                created_at=booking.created_at,
-                hold_expires_at=booking.hold_expires_at
+                id=booking_id,
+                booking_reference=booking_reference,
+                status=BookingStatus.PENDING,
+                payment_status=PaymentStatus.PENDING,
+                guest_details=request.guest_details,
+                room_bookings=[RoomBookingDetails(**room_booking)],
+                pricing=PricingBreakdown(**pricing_breakdown),
+                created_at=datetime.fromisoformat(now),
+                hold_expires_at=hold_expires_at
             )
         }
     
     @staticmethod
     async def confirm_booking(request: BookingConfirmRequest) -> BookingResponse:
         """Confirm a booking hold"""
-        booking = await Booking.get(request.hold_token)
-        if not booking:
+        supabase = get_supabase()
+        
+        result = supabase.table("bookings").select("*").eq("id", request.hold_token).execute()
+        if not result.data:
             raise ValueError("Invalid hold token")
         
-        if booking.idempotency_key != request.idempotency_key:
+        booking = result.data[0]
+        
+        if booking["idempotency_key"] != request.idempotency_key:
             raise ValueError("Invalid idempotency key")
         
-        if booking.status != BookingStatus.PENDING:
+        if booking["status"] != BookingStatus.PENDING.value:
             raise ValueError("Booking already processed")
         
-        if booking.hold_expires_at and booking.hold_expires_at <= datetime.utcnow():
-            raise ValueError("Hold expired")
+        hold_expires = booking.get("hold_expires_at")
+        if hold_expires:
+            hold_expires_dt = datetime.fromisoformat(hold_expires.replace("Z", "+00:00").replace("+00:00", ""))
+            if hold_expires_dt <= datetime.utcnow():
+                raise ValueError("Hold expired")
         
         # Update booking status
-        booking.status = BookingStatus.CONFIRMED
-        booking.hold_expires_at = None
-        booking.updated_at = datetime.utcnow()
-        booking.version += 1
-        
-        await booking.save()
+        now = datetime.utcnow().isoformat()
+        supabase.table("bookings").update({
+            "status": BookingStatus.CONFIRMED.value,
+            "hold_expires_at": None,
+            "updated_at": now,
+            "version": booking["version"] + 1
+        }).eq("id", request.hold_token).execute()
         
         # Log the confirmation
-        audit_log = AuditLog(
-            actor="system",
-            action="booking_confirmed",
-            resource="booking",
-            resource_id=str(booking.id),
-            after=booking.dict()
-        )
-        await audit_log.insert()
+        supabase.table("audit_logs").insert({
+            "id": str(uuid.uuid4()),
+            "actor": "system",
+            "action": "booking_confirmed",
+            "resource": "booking",
+            "resource_id": request.hold_token,
+            "before": {"status": booking["status"]},
+            "after": {"status": BookingStatus.CONFIRMED.value},
+            "timestamp": now
+        }).execute()
         
         return BookingResponse(
-            id=str(booking.id),
-            booking_reference=booking.booking_reference,
-            status=booking.status,
-            payment_status=booking.payment_status,
-            guest_details=booking.guest_details,
-            room_bookings=booking.room_bookings,
-            pricing=booking.pricing,
-            created_at=booking.created_at,
-            hold_expires_at=booking.hold_expires_at
+            id=booking["id"],
+            booking_reference=booking["booking_reference"],
+            status=BookingStatus.CONFIRMED,
+            payment_status=PaymentStatus(booking["payment_status"]),
+            guest_details=GuestDetails(**booking["guest_details"]),
+            room_bookings=[RoomBookingDetails(**rb) for rb in booking["room_bookings"]],
+            pricing=PricingBreakdown(**booking["pricing"]),
+            created_at=datetime.fromisoformat(booking["created_at"].replace("Z", "")),
+            hold_expires_at=None
         )
     
     @staticmethod
     async def cancel_booking(booking_id: str, reason: str = "User cancelled") -> Dict[str, Any]:
         """Cancel a booking"""
-        booking = await Booking.get(booking_id)
-        if not booking:
+        supabase = get_supabase()
+        
+        result = supabase.table("bookings").select("*").eq("id", booking_id).execute()
+        if not result.data:
             raise ValueError("Booking not found")
         
-        if booking.status in [BookingStatus.CANCELLED, BookingStatus.CHECKED_OUT]:
+        booking = result.data[0]
+        
+        if booking["status"] in [BookingStatus.CANCELLED.value, BookingStatus.CHECKED_OUT.value]:
             raise ValueError("Booking already cancelled or completed")
         
         # Calculate refund based on cancellation policy
         refund_amount = 0
-        room = await Room.get(booking.room_bookings[0].room_id)
+        room_booking = booking["room_bookings"][0]
+        room = await BookingService.get_room_by_id(room_booking["room_id"])
         
-        if room.cancellation_policy == CancellationPolicy.FREE_48H:
-            # Free cancellation if more than 48 hours before check-in
-            checkin_datetime = datetime.combine(booking.room_bookings[0].start_date, datetime.min.time())
-            if datetime.utcnow() < checkin_datetime - timedelta(hours=48):
-                refund_amount = booking.pricing.total_amount
-        elif room.cancellation_policy == CancellationPolicy.FLEXIBLE:
-            # 50% refund for flexible policy
-            refund_amount = booking.pricing.total_amount * 0.5
-        # Non-refundable = 0 refund
+        if room:
+            cancellation_policy = room.get("cancellation_policy", "free_48h")
+            pricing = booking["pricing"]
+            
+            if cancellation_policy == CancellationPolicy.FREE_48H.value:
+                checkin_date = datetime.fromisoformat(room_booking["start_date"])
+                if datetime.utcnow() < checkin_date - timedelta(hours=48):
+                    refund_amount = pricing["total_amount"]
+            elif cancellation_policy == CancellationPolicy.FLEXIBLE.value:
+                refund_amount = pricing["total_amount"] * 0.5
         
         # Update booking
-        old_booking = booking.dict()
-        booking.status = BookingStatus.CANCELLED
-        booking.updated_at = datetime.utcnow()
-        booking.version += 1
-        
-        await booking.save()
+        now = datetime.utcnow().isoformat()
+        supabase.table("bookings").update({
+            "status": BookingStatus.CANCELLED.value,
+            "updated_at": now,
+            "version": booking["version"] + 1
+        }).eq("id", booking_id).execute()
         
         # Release inventory
-        for room_booking in booking.room_bookings:
-            current_date = room_booking.start_date
-            while current_date < room_booking.end_date:
-                inventory = await RoomInventory.find_one(
-                    And(
-                        RoomInventory.room_id == room_booking.room_id,
-                        RoomInventory.date == current_date
-                    )
-                )
-                if inventory and inventory.locked_count > 0:
-                    inventory.locked_count -= 1
-                    await inventory.save()
+        for rb in booking["room_bookings"]:
+            start_date = datetime.fromisoformat(rb["start_date"]).date()
+            end_date = datetime.fromisoformat(rb["end_date"]).date()
+            current_date = start_date
+            
+            while current_date < end_date:
+                date_str = current_date.isoformat()
+                inv_result = supabase.table("room_inventory").select("*").eq("room_id", rb["room_id"]).eq("date", date_str).execute()
+                
+                if inv_result.data and inv_result.data[0].get("locked_count", 0) > 0:
+                    inv = inv_result.data[0]
+                    supabase.table("room_inventory").update({
+                        "locked_count": max(0, inv["locked_count"] - 1),
+                        "updated_at": now
+                    }).eq("id", inv["id"]).execute()
                 
                 current_date += timedelta(days=1)
         
         # Log the cancellation
-        audit_log = AuditLog(
-            actor="system",
-            action="booking_cancelled",
-            resource="booking",
-            resource_id=str(booking.id),
-            before=old_booking,
-            after=booking.dict()
-        )
-        await audit_log.insert()
+        supabase.table("audit_logs").insert({
+            "id": str(uuid.uuid4()),
+            "actor": "system",
+            "action": "booking_cancelled",
+            "resource": "booking",
+            "resource_id": booking_id,
+            "before": {"status": booking["status"]},
+            "after": {"status": BookingStatus.CANCELLED.value, "reason": reason},
+            "timestamp": now
+        }).execute()
         
         return {
-            "booking_id": str(booking.id),
+            "booking_id": booking_id,
             "status": "cancelled",
             "refund_amount": refund_amount,
             "refund_eligible": refund_amount > 0
@@ -422,18 +441,16 @@ class BookingService:
     @staticmethod
     async def release_expired_holds():
         """Background task to release expired holds"""
-        expired_bookings = await Booking.find(
-            And(
-                Booking.status == BookingStatus.PENDING,
-                Booking.hold_expires_at <= datetime.utcnow()
-            )
-        ).to_list()
+        supabase = get_supabase()
+        now = datetime.utcnow().isoformat()
         
-        for booking in expired_bookings:
+        expired_result = supabase.table("bookings").select("id").eq("status", BookingStatus.PENDING.value).lt("hold_expires_at", now).execute()
+        
+        for booking in expired_result.data:
             try:
-                await BookingService.cancel_booking(str(booking.id), "Hold expired")
+                await BookingService.cancel_booking(booking["id"], "Hold expired")
             except Exception as e:
-                print(f"Error releasing expired hold {booking.id}: {e}")
+                print(f"Error releasing expired hold {booking['id']}: {e}")
     
     @staticmethod
     async def search_rooms(
@@ -445,49 +462,45 @@ class BookingService:
         max_price: Optional[float] = None
     ) -> List[RoomResponse]:
         """Search available rooms"""
+        supabase = get_supabase()
+        
         # Build query
-        query_conditions = [Room.active == True]
+        query = supabase.table("rooms").select("*").eq("active", True).gte("max_occupancy", guests)
         
         if room_type:
-            query_conditions.append(Room.room_type == room_type)
+            query = query.eq("room_type", room_type.value)
         
         if min_price:
-            query_conditions.append(Room.base_price >= min_price)
+            query = query.gte("base_price", min_price)
         
         if max_price:
-            query_conditions.append(Room.base_price <= max_price)
+            query = query.lte("base_price", max_price)
         
-        # Filter by occupancy
-        query_conditions.append(Room.max_occupancy >= guests)
-        
-        if len(query_conditions) > 1:
-            rooms = await Room.find(And(*query_conditions)).to_list()
-        else:
-            rooms = await Room.find(query_conditions[0]).to_list()
+        result = query.execute()
         
         # Check availability for each room
         available_rooms = []
-        for room in rooms:
+        for room in result.data:
             availability = await BookingService.get_room_availability(
-                str(room.id), start_date, end_date
+                room["id"], start_date, end_date
             )
             
             if availability["available"]:
                 available_rooms.append(RoomResponse(
-                    id=str(room.id),
-                    slug=room.slug,
-                    title=room.title,
-                    description=room.description,
-                    room_type=room.room_type,
-                    amenities=room.amenities,
-                    images=room.images,
-                    base_price=room.base_price,
-                    max_occupancy=room.max_occupancy,
-                    bed_configuration=room.bed_configuration,
-                    room_size=room.room_size,
-                    floor=room.floor,
-                    view=room.view,
-                    cancellation_policy=room.cancellation_policy,
+                    id=room["id"],
+                    slug=room["slug"],
+                    title=room["title"],
+                    description=room["description"],
+                    room_type=RoomType(room["room_type"]),
+                    amenities=room.get("amenities", []),
+                    images=room.get("images", []),
+                    base_price=room["base_price"],
+                    max_occupancy=room["max_occupancy"],
+                    bed_configuration=room["bed_configuration"],
+                    room_size=room["room_size"],
+                    floor=room["floor"],
+                    view=room["view"],
+                    cancellation_policy=CancellationPolicy(room["cancellation_policy"]),
                     available=True
                 ))
         

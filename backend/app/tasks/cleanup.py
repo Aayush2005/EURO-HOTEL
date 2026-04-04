@@ -4,32 +4,41 @@ Background tasks for cleanup operations
 import asyncio
 import logging
 from datetime import datetime, timedelta
-from app.models.pending_registration import PendingRegistration
+from app.database import get_supabase
+from app.services.booking_service import BookingService
 
 logger = logging.getLogger(__name__)
 
 async def cleanup_expired_pending_registrations():
     """
     Delete pending registrations older than 10 minutes
-    Runs continuously in the background
+    and release expired booking holds.
+    Runs continuously in the background.
     """
     while True:
         try:
+            supabase = get_supabase()
+            
             # Calculate cutoff time (10 minutes ago)
-            cutoff_time = datetime.utcnow() - timedelta(minutes=10)
+            cutoff_time = (datetime.utcnow() - timedelta(minutes=10)).isoformat()
             
             # Find and delete expired pending registrations
-            expired = await PendingRegistration.find(
-                PendingRegistration.created_at < cutoff_time
-            ).to_list()
+            result = supabase.table("pending_registrations").select("id").lt("created_at", cutoff_time).execute()
             
-            if expired:
+            if result.data:
                 deleted_count = 0
-                for pending in expired:
-                    await pending.delete()
+                for pending in result.data:
+                    supabase.table("pending_registrations").delete().eq("id", pending["id"]).execute()
                     deleted_count += 1
                 
-                logger.info(f"Cleaned up {deleted_count} expired pending registrations")
+                if deleted_count > 0:
+                    logger.info(f"Cleaned up {deleted_count} expired pending registrations")
+            
+            # Also release expired booking holds
+            try:
+                await BookingService.release_expired_holds()
+            except Exception as e:
+                logger.error(f"Error releasing expired holds: {e}")
             
             # Run every 5 minutes
             await asyncio.sleep(300)

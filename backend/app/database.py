@@ -1,31 +1,21 @@
-from motor.motor_asyncio import AsyncIOMotorClient
-from beanie import init_beanie
-from app.models.user import User, Session
-from app.models.booking import Room, RoomInventory, Booking, Payment, PromoCode, AuditLog
-from app.models.pending_registration import PendingRegistration
+from supabase import create_client, Client
 from app.config import settings
 
-class Database:
-    client: AsyncIOMotorClient = None
-    database = None
+# Supabase client instance
+supabase: Client = None
 
-db = Database()
+def get_supabase() -> Client:
+    """Get the Supabase client instance"""
+    global supabase
+    if supabase is None:
+        supabase = create_client(settings.supabase_url, settings.supabase_key)
+    return supabase
 
-async def connect_to_mongo():
-    """Create database connection"""
-    db.client = AsyncIOMotorClient(settings.mongodb_uri)
-    db.database = db.client[settings.database_name]
-    
-    # Initialize beanie with all models
-    await init_beanie(
-        database=db.database,
-        document_models=[
-            User, Session, Room, RoomInventory, 
-            Booking, Payment, PromoCode, AuditLog, PendingRegistration
-        ]
-    )
+async def connect_to_db():
+    """Initialize Supabase client"""
+    global supabase
+    supabase = create_client(settings.supabase_url, settings.supabase_key)
 
-async def close_mongo_connection():
-    """Close database connection"""
-    if db.client:
-        db.client.close()
+async def close_db_connection():
+    """Close database connection (no-op for Supabase REST client)"""
+    pass

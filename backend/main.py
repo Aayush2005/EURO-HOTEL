@@ -8,7 +8,7 @@ from contextlib import asynccontextmanager
 import logging
 import asyncio
 
-from app.database import connect_to_mongo, close_mongo_connection
+from app.database import connect_to_db, close_db_connection
 from app.routes.auth import router as auth_router, limiter
 from app.routes.booking import router as booking_router
 from app.routes.payment import router as payment_router
@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting up...")
-    await connect_to_mongo()
-    logger.info("Connected to MongoDB")
+    await connect_to_db()
+    logger.info("Connected to Supabase (PostgreSQL)")
     
     # Start background cleanup task
     cleanup_task = asyncio.create_task(cleanup_expired_pending_registrations())
@@ -41,8 +41,8 @@ async def lifespan(app: FastAPI):
         await cleanup_task
     except asyncio.CancelledError:
         logger.info("Cleanup task cancelled")
-    await close_mongo_connection()
-    logger.info("Disconnected from MongoDB")
+    await close_db_connection()
+    logger.info("Disconnected from database")
 
 app = FastAPI(
     title="Euro Hotel Authentication API",

@@ -1,10 +1,11 @@
 from datetime import datetime, timedelta
-from typing import Optional, Union
+from typing import Optional
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import HTTPException, status, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from app.models.user import User, UserStatus
+from app.models.user import UserDB, UserStatus
+from app.database import get_supabase
 from app.config import settings
 import secrets
 import string
@@ -29,7 +30,7 @@ def get_password_hash(password: str) -> str:
 
 def validate_password_strength(password: str) -> bool:
     """Validate password meets security requirements"""
-    if len(password) < 8 or len(password) > 128:  # Reasonable max length
+    if len(password) < 8 or len(password) > 128:
         return False
     
     has_upper = any(c.isupper() for c in password)
@@ -71,10 +72,26 @@ def verify_token(token: str, secret_key: str) -> Optional[dict]:
     except JWTError:
         return None
 
+async def get_user_by_id(user_id: str) -> Optional[UserDB]:
+    """Get user by ID from Supabase"""
+    supabase = get_supabase()
+    result = supabase.table("users").select("*").eq("id", user_id).execute()
+    if result.data:
+        return UserDB(**result.data[0])
+    return None
+
+async def get_user_by_email(email: str) -> Optional[UserDB]:
+    """Get user by email from Supabase (case-insensitive)"""
+    supabase = get_supabase()
+    result = supabase.table("users").select("*").ilike("email", email).execute()
+    if result.data:
+        return UserDB(**result.data[0])
+    return None
+
 async def get_current_user(
     request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> User:
+) -> UserDB:
     """Get current authenticated user from JWT token"""
     
     # Try to get token from Authorization header first
@@ -111,7 +128,7 @@ async def get_current_user(
         )
     
     # Get user from database
-    user = await User.get(user_id)
+    user = await get_user_by_id(user_id)
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -131,7 +148,7 @@ async def get_current_user(
 async def get_current_user_optional(
     request: Request,
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
-) -> Optional[User]:
+) -> Optional[UserDB]:
     """Get current authenticated user from JWT token (optional)"""
     
     # Try to get token from Authorization header first
@@ -156,13 +173,13 @@ async def get_current_user_optional(
         return None
     
     # Get user from database
-    user = await User.get(user_id)
+    user = await get_user_by_id(user_id)
     if user is None or user.status != UserStatus.ACTIVE:
         return None
     
     return user
 
-async def get_current_active_user(current_user: User = Depends(get_current_user)) -> User:
+async def get_current_active_user(current_user: UserDB = Depends(get_current_user)) -> UserDB:
     """Get current active user"""
     if current_user.status != UserStatus.ACTIVE:
         raise HTTPException(

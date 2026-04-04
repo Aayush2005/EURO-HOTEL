@@ -6,9 +6,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class Settings(BaseSettings):
-    # Database
-    mongodb_uri: str = os.getenv("MONGODB_URI")
-    database_name: str = "euro_hotel"
+    # Supabase Configuration
+    supabase_url: str = os.getenv("SUPABASE_URL", "")
+    supabase_key: str = os.getenv("SUPABASE_KEY", "")  # Use service_role key for backend
     
     # JWT
     jwt_secret_key: str = os.getenv("JWT_SECRET_KEY")
@@ -52,5 +52,6 @@ class Settings(BaseSettings):
     
     class Config:
         env_file = ".env"
+        extra = "ignore"  # Ignore extra fields like old MONGODB_URI
 
 settings = Settings()

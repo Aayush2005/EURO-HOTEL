@@ -8,7 +8,7 @@ import logging
 
 from app.services.payment_service import PaymentService
 from app.auth import get_current_user
-from app.models.user import User
+from app.models.user import UserDB
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ router = APIRouter(prefix="/api", tags=["payment"])
 async def create_payment_session(
     request: Request,
     booking_id: str,
-    current_user: Optional[User] = Depends(get_current_user)
+    current_user: Optional[UserDB] = Depends(get_current_user)
 ):
     """Create Razorpay payment session for booking"""
     try:
@@ -112,7 +112,7 @@ async def handle_payment_failure(
 @router.get("/payments/{booking_id}/status")
 async def get_payment_status(
     booking_id: str,
-    current_user: Optional[User] = Depends(get_current_user)
+    current_user: Optional[UserDB] = Depends(get_current_user)
 ):
     """Get payment status for a booking"""
     try:
@@ -179,7 +179,7 @@ async def initiate_refund(
     booking_id: str,
     amount: float,
     reason: str = "Booking cancelled",
-    current_user: User = Depends(get_current_user)  # Admin only in production
+    current_user: UserDB = Depends(get_current_user)  # Admin only in production
 ):
     """Initiate refund for a booking (Admin endpoint)"""
     try:

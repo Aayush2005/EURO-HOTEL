@@ -5,18 +5,20 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from app.models.user import (
-    User, UserRegister, UserLogin, VerifyOTP, ResetPasswordRequest, 
+    UserDB, UserRegister, UserLogin, VerifyOTP, ResetPasswordRequest, 
     ResetPassword, UpdateProfile, UserResponse, TokenResponse, UserStatus
 )
-from app.models.pending_registration import PendingRegistration
+from app.models.pending_registration import PendingRegistrationDB
 from app.auth import (
     get_password_hash, verify_password, validate_password_strength,
     create_access_token, create_refresh_token, verify_token, generate_otp,
-    get_current_active_user
+    get_current_active_user, get_user_by_email, get_user_by_id
 )
+from app.database import get_supabase
 from app.email import send_otp_email
 from app.config import settings
 import logging
+import uuid
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,7 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 @limiter.limit("5/minute")
 async def register(request: Request, user_data: UserRegister):
     """Register a new user - stores in pending until OTP verification"""
+    supabase = get_supabase()
     
     # Validate password strength
     if not validate_password_strength(user_data.password):
@@ -36,42 +39,44 @@ async def register(request: Request, user_data: UserRegister):
             detail="Password must be at least 8 characters with uppercase, lowercase, number, and special character"
         )
     
-    # Check if user already exists (in both users and pending registrations)
-    # Case-insensitive email check
-    existing_user = await User.find_one(
-        {"email": {"$regex": f"^{user_data.email}$", "$options": "i"}}
-    )
-    
-    existing_pending = await PendingRegistration.find_one(
-        {"email": {"$regex": f"^{user_data.email}$", "$options": "i"}}
-    )
-    
+    # Check if user already exists (case-insensitive)
+    existing_user = await get_user_by_email(user_data.email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Email already registered"
         )
     
-    if existing_pending:
+    # Check if pending registration exists
+    pending_result = supabase.table("pending_registrations").select("*").ilike("email", user_data.email).execute()
+    if pending_result.data:
         # Remove old pending registration
-        await existing_pending.delete()
+        supabase.table("pending_registrations").delete().eq("id", pending_result.data[0]["id"]).execute()
     
     # Generate OTP
     otp_code = generate_otp()
     otp_expiry = datetime.utcnow() + timedelta(minutes=settings.otp_expire_minutes)
     
-    # Store in pending registrations (NOT in users table)
-    pending_registration = PendingRegistration(
-        email=user_data.email,
-        name=user_data.name,
-        password_hash=get_password_hash(user_data.password),
-        phone=user_data.phone,
-        country_code=user_data.country_code,
-        otp_code=otp_code,
-        otp_expiry=otp_expiry
-    )
+    # Store in pending registrations
+    pending_data = {
+        "id": str(uuid.uuid4()),
+        "email": user_data.email,
+        "name": user_data.name,
+        "password_hash": get_password_hash(user_data.password),
+        "phone": user_data.phone,
+        "country_code": user_data.country_code,
+        "otp_code": otp_code,
+        "otp_expiry": otp_expiry.isoformat(),
+        "created_at": datetime.utcnow().isoformat()
+    }
     
-    await pending_registration.insert()
+    result = supabase.table("pending_registrations").insert(pending_data).execute()
+    
+    if not result.data:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create pending registration"
+        )
     
     # Send OTP email
     email_sent = await send_otp_email(user_data.email, otp_code, "account verification")
@@ -79,7 +84,7 @@ async def register(request: Request, user_data: UserRegister):
     if not email_sent:
         logger.warning(f"Failed to send OTP email to {user_data.email}")
         # If email fails, remove pending registration
-        await pending_registration.delete()
+        supabase.table("pending_registrations").delete().eq("id", pending_data["id"]).execute()
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to send verification email. Please try again."
@@ -93,61 +98,72 @@ async def register(request: Request, user_data: UserRegister):
 @router.post("/verify-otp", response_model=TokenResponse)
 async def verify_otp(response: Response, otp_data: VerifyOTP):
     """Verify OTP and create actual user account"""
+    supabase = get_supabase()
     
     # First check if it's a pending registration (case-insensitive)
-    pending_registration = await PendingRegistration.find_one(
-        {"email": {"$regex": f"^{otp_data.email}$", "$options": "i"}}
-    )
+    pending_result = supabase.table("pending_registrations").select("*").ilike("email", otp_data.email).execute()
     
-    if pending_registration:
-        # This is a new registration verification
+    user = None
+    
+    if pending_result.data:
+        pending = pending_result.data[0]
         
         # Check OTP
-        if pending_registration.otp_code != otp_data.otp_code:
+        if pending["otp_code"] != otp_data.otp_code:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Invalid OTP code"
             )
         
         # Check OTP expiry
-        if datetime.utcnow() > pending_registration.otp_expiry:
-            # Clean up expired pending registration
-            await pending_registration.delete()
+        otp_expiry = datetime.fromisoformat(pending["otp_expiry"].replace("Z", "+00:00").replace("+00:00", ""))
+        if datetime.utcnow() > otp_expiry:
+            supabase.table("pending_registrations").delete().eq("id", pending["id"]).execute()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="OTP code has expired. Please register again."
             )
         
-        # Check if user was created in the meantime (case-insensitive email)
-        existing_user = await User.find_one(
-            {"email": {"$regex": f"^{pending_registration.email}$", "$options": "i"}}
-        )
-        
+        # Check if user was created in the meantime
+        existing_user = await get_user_by_email(pending["email"])
         if existing_user:
-            await pending_registration.delete()
+            supabase.table("pending_registrations").delete().eq("id", pending["id"]).execute()
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email already registered"
             )
         
         # Create the actual user account
-        user = User(
-            email=pending_registration.email,
-            name=pending_registration.name,
-            password_hash=pending_registration.password_hash,
-            phone=pending_registration.phone,
-            country_code=pending_registration.country_code,
-            status=UserStatus.ACTIVE  # Directly active since OTP is verified
-        )
+        user_id = str(uuid.uuid4())
+        now = datetime.utcnow().isoformat()
+        user_data = {
+            "id": user_id,
+            "email": pending["email"],
+            "name": pending["name"],
+            "password_hash": pending["password_hash"],
+            "phone": pending["phone"],
+            "country_code": pending["country_code"],
+            "status": UserStatus.ACTIVE.value,
+            "refresh_tokens": [],
+            "created_at": now,
+            "updated_at": now
+        }
         
-        await user.insert()
+        result = supabase.table("users").insert(user_data).execute()
+        if not result.data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to create user account"
+            )
+        
+        user = UserDB(**result.data[0])
         
         # Clean up pending registration
-        await pending_registration.delete()
+        supabase.table("pending_registrations").delete().eq("id", pending["id"]).execute()
         
     else:
-        # Check if it's an existing user (password reset, etc.) - case-insensitive
-        user = await User.find_one({"email": {"$regex": f"^{otp_data.email}$", "$options": "i"}})
+        # Check if it's an existing user (password reset, etc.)
+        user = await get_user_by_email(otp_data.email)
         if not user:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -169,19 +185,25 @@ async def verify_otp(response: Response, otp_data: VerifyOTP):
             )
         
         # Activate user and clear OTP
+        supabase.table("users").update({
+            "status": UserStatus.ACTIVE.value,
+            "otp_code": None,
+            "otp_expiry": None,
+            "updated_at": datetime.utcnow().isoformat()
+        }).eq("id", user.id).execute()
+        
         user.status = UserStatus.ACTIVE
-        user.otp_code = None
-        user.otp_expiry = None
-        user.updated_at = datetime.utcnow()
-        await user.save()
     
     # Create tokens
     access_token = create_access_token(data={"sub": str(user.id)})
     refresh_token = create_refresh_token(data={"sub": str(user.id)})
     
     # Store refresh token
-    user.refresh_tokens.append(refresh_token)
-    await user.save()
+    refresh_tokens = user.refresh_tokens if user.refresh_tokens else []
+    refresh_tokens.append(refresh_token)
+    supabase.table("users").update({
+        "refresh_tokens": refresh_tokens
+    }).eq("id", user.id).execute()
     
     # Set cookies
     response.set_cookie(
@@ -217,11 +239,10 @@ async def verify_otp(response: Response, otp_data: VerifyOTP):
 @limiter.limit("5/minute")
 async def login(request: Request, response: Response, login_data: UserLogin):
     """Login user"""
+    supabase = get_supabase()
     
     # Find user by email (case-insensitive)
-    user = await User.find_one(
-        {"email": {"$regex": f"^{login_data.email}$", "$options": "i"}}
-    )
+    user = await get_user_by_email(login_data.email)
     
     if not user or not verify_password(login_data.password, user.password_hash):
         raise HTTPException(
@@ -240,9 +261,12 @@ async def login(request: Request, response: Response, login_data: UserLogin):
     refresh_token = create_refresh_token(data={"sub": str(user.id)})
     
     # Store refresh token
-    user.refresh_tokens.append(refresh_token)
-    user.updated_at = datetime.utcnow()
-    await user.save()
+    refresh_tokens = user.refresh_tokens if user.refresh_tokens else []
+    refresh_tokens.append(refresh_token)
+    supabase.table("users").update({
+        "refresh_tokens": refresh_tokens,
+        "updated_at": datetime.utcnow().isoformat()
+    }).eq("id", user.id).execute()
     
     # Set cookies
     response.set_cookie(
@@ -275,8 +299,9 @@ async def login(request: Request, response: Response, login_data: UserLogin):
     return TokenResponse(access_token=access_token, user=user_response)
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(request: Request, response: Response):
+async def refresh_token_endpoint(request: Request, response: Response):
     """Refresh access token"""
+    supabase = get_supabase()
     
     refresh_token = request.cookies.get("refresh_token")
     if not refresh_token:
@@ -294,9 +319,9 @@ async def refresh_token(request: Request, response: Response):
         )
     
     user_id = payload.get("sub")
-    user = await User.get(user_id)
+    user = await get_user_by_id(user_id)
     
-    if not user or refresh_token not in user.refresh_tokens:
+    if not user or refresh_token not in (user.refresh_tokens or []):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token"
@@ -328,15 +353,18 @@ async def refresh_token(request: Request, response: Response):
     return TokenResponse(access_token=access_token, user=user_response)
 
 @router.post("/logout")
-async def logout(request: Request, response: Response, current_user: User = Depends(get_current_active_user)):
+async def logout(request: Request, response: Response, current_user: UserDB = Depends(get_current_active_user)):
     """Logout user"""
+    supabase = get_supabase()
     
     refresh_token = request.cookies.get("refresh_token")
     
     # Remove refresh token from user
-    if refresh_token and refresh_token in current_user.refresh_tokens:
-        current_user.refresh_tokens.remove(refresh_token)
-        await current_user.save()
+    if refresh_token and refresh_token in (current_user.refresh_tokens or []):
+        refresh_tokens = [t for t in current_user.refresh_tokens if t != refresh_token]
+        supabase.table("users").update({
+            "refresh_tokens": refresh_tokens
+        }).eq("id", current_user.id).execute()
     
     # Clear cookies
     response.delete_cookie(key="access_token", httponly=True, secure=True, samesite="strict")
@@ -348,9 +376,9 @@ async def logout(request: Request, response: Response, current_user: User = Depe
 @limiter.limit("3/minute")
 async def reset_password_request(request: Request, reset_data: ResetPasswordRequest):
     """Request password reset"""
+    supabase = get_supabase()
     
-    # Case-insensitive email lookup
-    user = await User.find_one({"email": {"$regex": f"^{reset_data.email}$", "$options": "i"}})
+    user = await get_user_by_email(reset_data.email)
     if not user:
         # Don't reveal if email exists or not
         return {"message": "If the email exists, a reset code has been sent."}
@@ -359,10 +387,11 @@ async def reset_password_request(request: Request, reset_data: ResetPasswordRequ
     otp_code = generate_otp()
     otp_expiry = datetime.utcnow() + timedelta(minutes=settings.otp_expire_minutes)
     
-    user.otp_code = otp_code
-    user.otp_expiry = otp_expiry
-    user.updated_at = datetime.utcnow()
-    await user.save()
+    supabase.table("users").update({
+        "otp_code": otp_code,
+        "otp_expiry": otp_expiry.isoformat(),
+        "updated_at": datetime.utcnow().isoformat()
+    }).eq("id", user.id).execute()
     
     # Send OTP email
     await send_otp_email(reset_data.email, otp_code, "password reset")
@@ -372,6 +401,7 @@ async def reset_password_request(request: Request, reset_data: ResetPasswordRequ
 @router.post("/reset-password")
 async def reset_password(reset_data: ResetPassword):
     """Reset password with OTP"""
+    supabase = get_supabase()
     
     if not validate_password_strength(reset_data.new_password):
         raise HTTPException(
@@ -379,8 +409,7 @@ async def reset_password(reset_data: ResetPassword):
             detail="Password must be at least 8 characters with uppercase, lowercase, number, and special character"
         )
     
-    # Case-insensitive email lookup
-    user = await User.find_one({"email": {"$regex": f"^{reset_data.email}$", "$options": "i"}})
+    user = await get_user_by_email(reset_data.email)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -402,18 +431,22 @@ async def reset_password(reset_data: ResetPassword):
         )
     
     # Update password
-    user.password_hash = get_password_hash(reset_data.new_password)
-    user.otp_code = None
-    user.otp_expiry = None
-    user.refresh_tokens = []  # Invalidate all refresh tokens
-    user.updated_at = datetime.utcnow()
-    await user.save()
+    supabase.table("users").update({
+        "password_hash": get_password_hash(reset_data.new_password),
+        "otp_code": None,
+        "otp_expiry": None,
+        "refresh_tokens": [],
+        "updated_at": datetime.utcnow().isoformat()
+    }).eq("id", user.id).execute()
     
     return {"message": "Password reset successfully"}
 
 @router.put("/update-profile", response_model=UserResponse)
-async def update_profile(profile_data: UpdateProfile, current_user: User = Depends(get_current_active_user)):
+async def update_profile(profile_data: UpdateProfile, current_user: UserDB = Depends(get_current_active_user)):
     """Update user profile"""
+    supabase = get_supabase()
+    
+    update_data = {"updated_at": datetime.utcnow().isoformat()}
     
     # If changing password, verify current password
     if profile_data.new_password:
@@ -435,36 +468,44 @@ async def update_profile(profile_data: UpdateProfile, current_user: User = Depen
                 detail="Password must be at least 8 characters with uppercase, lowercase, number, and special character"
             )
         
-        current_user.password_hash = get_password_hash(profile_data.new_password)
-        current_user.refresh_tokens = []  # Invalidate all refresh tokens
+        update_data["password_hash"] = get_password_hash(profile_data.new_password)
+        update_data["refresh_tokens"] = []
     
     # Update name if provided
     if profile_data.name and profile_data.name != current_user.name:
-        current_user.name = profile_data.name
+        update_data["name"] = profile_data.name
     
     # Update phone if provided
     if profile_data.phone:
-        current_user.phone = profile_data.phone
+        update_data["phone"] = profile_data.phone
     
     # Update country code if provided
     if profile_data.country_code:
-        current_user.country_code = profile_data.country_code
+        update_data["country_code"] = profile_data.country_code
     
-    current_user.updated_at = datetime.utcnow()
-    await current_user.save()
+    # Perform update
+    result = supabase.table("users").update(update_data).eq("id", current_user.id).execute()
+    
+    if result.data:
+        updated_user = UserDB(**result.data[0])
+    else:
+        updated_user = current_user
+        for key, value in update_data.items():
+            if hasattr(updated_user, key):
+                setattr(updated_user, key, value)
     
     return UserResponse(
-        id=str(current_user.id),
-        email=current_user.email,
-        name=current_user.name,
-        phone=current_user.phone,
-        country_code=current_user.country_code,
-        status=current_user.status,
-        created_at=current_user.created_at
+        id=str(updated_user.id),
+        email=updated_user.email,
+        name=updated_user.name,
+        phone=updated_user.phone,
+        country_code=updated_user.country_code,
+        status=updated_user.status,
+        created_at=updated_user.created_at
     )
 
 @router.get("/me", response_model=UserResponse)
-async def get_current_user_info(current_user: User = Depends(get_current_active_user)):
+async def get_current_user_info(current_user: UserDB = Depends(get_current_active_user)):
     """Get current user information"""
     return UserResponse(
         id=str(current_user.id),

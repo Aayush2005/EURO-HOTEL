@@ -7,10 +7,9 @@ import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import asyncio
-from datetime import datetime
-from app.database import init_db
-from app.models.booking import Room, RoomType, CancellationPolicy, RoomImage
+import uuid
+from datetime import datetime, timezone
+from app.database import get_supabase
 
 # Hotel contact information
 HOTEL_CONTACT = {
@@ -35,110 +34,149 @@ HOTEL_SERVICES = [
     "Corporate tours", "Parking", "Multicuisine restaurant"
 ]
 
-async def create_rooms():
-    """Create Euro Hotel rooms with new pricing structure"""
+# Hotel policies
+HOTEL_POLICIES = {
+    "check_in": "2:00 PM",
+    "check_out": "12:00 PM",
+    "id_required": True,
+    "outside_guests": False,
+    "smoking": "No smoking in rooms - Separate smoking zone available",
+    "extra_bed_charge": 1500,
+    "cancellation": "48 hours before check-in for full refund (minus GST)",
+    "gst_rate_under_7500": 0.05,
+    "gst_rate_over_7500": 0.12
+}
+
+# F&B Outlets
+FB_OUTLETS = [
+    {"name": "nH-65 Fine Dining Restaurant", "location": "First Floor", "timing": "12 PM to 12 AM"},
+    {"name": "nH-65 Casual Dining Restaurant", "timing": "7 AM to 12 AM"},
+    {"name": "Barista Cafe", "timing": "24x7", "note": "Dine-in only at cafe for room service"},
+    {"name": "Room F&B Service", "timing": "7 AM to 12 AM"}
+]
+
+# Concierge Services
+CONCIERGE_SERVICES = [
+    "Luxury Cabs Service",
+    "Laundry Service", 
+    "Tour Plan with Sightseeing",
+    "Travel Help",
+    "Ticket Booking",
+    "Group Tour Management",
+    "Corporate Tour"
+]
+
+def create_rooms():
+    """Create Euro Hotel room types (only 3 room types with inventory)"""
+    supabase = get_supabase()
     
     # Clear existing rooms
-    await Room.delete_all()
+    supabase.table("rooms").delete().neq("id", "00000000-0000-0000-0000-000000000000").execute()
+    print("Cleared existing rooms")
     
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Only 3 room types with total inventory
     rooms_data = [
-        # EH Deluxe Highway View Rooms (6500 + GST)
         {
-            "slug": "eh-deluxe-highway-view-1",
-            "title": "EH Deluxe Room Highway View - 101",
-            "description": "Spacious deluxe room with highway view, premium amenities and modern furnishing. Perfect for business and leisure travelers.",
-            "room_type": RoomType.EH_DELUXE_HIGHWAY_VIEW,
-            "amenities": STANDARD_AMENITIES + ["Highway view", "Premium furnishing", "Work desk"],
+            "id": str(uuid.uuid4()),
+            "slug": "eh-deluxe-highway-view",
+            "title": "EH Deluxe Room Highway View",
+            "description": "Spacious deluxe room with stunning highway view, premium amenities and modern furnishing. Perfect for business and leisure travelers seeking comfort and style.",
+            "room_type": "eh_deluxe_highway_view",
+            "amenities": STANDARD_AMENITIES + ["Highway view", "Premium furnishing", "Work desk", "Extra bed available"],
             "base_price": 6500.0,
             "max_occupancy": 3,
             "bed_configuration": "1 King Bed",
             "room_size": "350 sq ft",
             "floor": "1st Floor",
             "view": "Highway View",
-            "cancellation_policy": CancellationPolicy.FREE_48H,
+            "cancellation_policy": "free_48h",
             "images": [
-                RoomImage(url="/images/rooms/deluxe-highway-1.jpg", alt="EH Deluxe Highway View Room", is_primary=True, order=1)
-            ]
+                {"url": "/images/rooms/deluxe-highway-1.jpg", "alt": "EH Deluxe Highway View Room", "is_primary": True, "order": 1},
+                {"url": "/images/rooms/deluxe-highway-2.jpg", "alt": "EH Deluxe Highway View Room Interior", "is_primary": False, "order": 2}
+            ],
+            "room_metadata": {
+                "total_rooms": 2,
+                "extra_bed_available": True,
+                "extra_bed_charge": 1500
+            },
+            "active": True,
+            "created_at": now,
+            "updated_at": now
         },
         {
-            "slug": "eh-deluxe-highway-view-2",
-            "title": "EH Deluxe Room Highway View - 102",
-            "description": "Spacious deluxe room with highway view, premium amenities and modern furnishing. Perfect for business and leisure travelers.",
-            "room_type": RoomType.EH_DELUXE_HIGHWAY_VIEW,
-            "amenities": STANDARD_AMENITIES + ["Highway view", "Premium furnishing", "Work desk"],
-            "base_price": 6500.0,
-            "max_occupancy": 3,
-            "bed_configuration": "1 King Bed",
-            "room_size": "350 sq ft",
-            "floor": "1st Floor",
-            "view": "Highway View",
-            "cancellation_policy": CancellationPolicy.FREE_48H,
-            "images": [
-                RoomImage(url="/images/rooms/deluxe-highway-2.jpg", alt="EH Deluxe Highway View Room", is_primary=True, order=1)
-            ]
-        },
-        
-        # EH Premium Rooms (5000 + GST) - 15 rooms
-        *[{
-            "slug": f"eh-premium-{i+1:03d}",
-            "title": f"EH Premium Room - {200+i}",
-            "description": "Well-appointed premium room with modern amenities and comfortable furnishing. Ideal for comfortable stays.",
-            "room_type": RoomType.EH_PREMIUM,
-            "amenities": STANDARD_AMENITIES + ["Premium amenities", "City view"],
+            "id": str(uuid.uuid4()),
+            "slug": "eh-premium",
+            "title": "EH Premium Room",
+            "description": "Well-appointed premium room with modern amenities and comfortable furnishing. Ideal for comfortable stays with all essential facilities.",
+            "room_type": "eh_premium",
+            "amenities": STANDARD_AMENITIES + ["Premium amenities", "City view", "Extra bed available"],
             "base_price": 5000.0,
             "max_occupancy": 3,
             "bed_configuration": "1 Queen Bed",
             "room_size": "300 sq ft",
-            "floor": "2nd Floor" if i < 8 else "3rd Floor",
+            "floor": "2nd & 3rd Floor",
             "view": "City View",
-            "cancellation_policy": CancellationPolicy.FREE_48H,
+            "cancellation_policy": "free_48h",
             "images": [
-                RoomImage(url=f"/images/rooms/premium-{i+1}.jpg", alt="EH Premium Room", is_primary=True, order=1)
-            ]
-        } for i in range(15)],
-        
-        # EH Superior Rooms (4000 + GST) - Small rooms - 19 rooms
-        *[{
-            "slug": f"eh-superior-{i+1:03d}",
-            "title": f"EH Superior Room - {300+i}",
-            "description": "Compact superior room with essential amenities. Perfect for budget-conscious travelers without compromising on comfort.",
-            "room_type": RoomType.EH_SUPERIOR,
+                {"url": "/images/rooms/premium-1.jpg", "alt": "EH Premium Room", "is_primary": True, "order": 1},
+                {"url": "/images/rooms/premium-2.jpg", "alt": "EH Premium Room Interior", "is_primary": False, "order": 2}
+            ],
+            "room_metadata": {
+                "total_rooms": 15,
+                "extra_bed_available": True,
+                "extra_bed_charge": 1500
+            },
+            "active": True,
+            "created_at": now,
+            "updated_at": now
+        },
+        {
+            "id": str(uuid.uuid4()),
+            "slug": "eh-superior",
+            "title": "EH Superior Room",
+            "description": "Compact superior room with essential amenities. Perfect for budget-conscious travelers without compromising on comfort and quality.",
+            "room_type": "eh_superior",
             "amenities": STANDARD_AMENITIES,
             "base_price": 4000.0,
             "max_occupancy": 2,
             "bed_configuration": "1 Double Bed",
             "room_size": "250 sq ft",
-            "floor": "3rd Floor" if i < 10 else "4th Floor",
+            "floor": "3rd & 4th Floor",
             "view": "Garden View",
-            "cancellation_policy": CancellationPolicy.FREE_48H,
+            "cancellation_policy": "free_48h",
             "images": [
-                RoomImage(url=f"/images/rooms/superior-{i+1}.jpg", alt="EH Superior Room", is_primary=True, order=1)
-            ]
-        } for i in range(19)]
+                {"url": "/images/rooms/superior-1.jpg", "alt": "EH Superior Room", "is_primary": True, "order": 1},
+                {"url": "/images/rooms/superior-2.jpg", "alt": "EH Superior Room Interior", "is_primary": False, "order": 2}
+            ],
+            "room_metadata": {
+                "total_rooms": 19,
+                "extra_bed_available": False
+            },
+            "active": True,
+            "created_at": now,
+            "updated_at": now
+        }
     ]
     
-    # Create rooms
-    created_rooms = []
-    for room_data in rooms_data:
-        room = Room(**room_data)
-        await room.insert()
-        created_rooms.append(room)
-        print(f"Created room: {room.title}")
+    # Insert rooms
+    result = supabase.table("rooms").insert(rooms_data).execute()
     
-    print(f"\nSuccessfully created {len(created_rooms)} rooms:")
-    print(f"- EH Deluxe Highway View: 2 rooms @ ₹6,500 + GST")
-    print(f"- EH Premium: 15 rooms @ ₹5,000 + GST") 
-    print(f"- EH Superior: 19 rooms @ ₹4,000 + GST")
-    print(f"Total: 36 rooms")
-    print(f"\nContact: {HOTEL_CONTACT['email']}")
-    print(f"Phone: {HOTEL_CONTACT['phone']}")
+    print(f"\n✅ Successfully created 3 room types:")
+    print(f"   - EH Deluxe Highway View: 2 rooms @ ₹6,500 + GST")
+    print(f"   - EH Premium: 15 rooms @ ₹5,000 + GST") 
+    print(f"   - EH Superior: 19 rooms @ ₹4,000 + GST")
+    print(f"   Total inventory: 36 rooms")
+    print(f"\n📞 Contact: {HOTEL_CONTACT['email']}")
+    print(f"   Phone: {HOTEL_CONTACT['phone']}")
+    print(f"\n📋 Policies:")
+    print(f"   - GST: 5% under ₹7,500 tariff")
+    print(f"   - Extra bed: ₹1,500")
+    print(f"   - Cancellation: 48 hours before check-in (refund minus GST)")
+    print(f"   - ID Required, No outside guests, No smoking in rooms")
     
-    return created_rooms
-
-async def main():
-    """Initialize database and create rooms"""
-    await init_db()
-    await create_rooms()
+    return rooms_data
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    create_rooms()

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, status, Depends, Request, Query
 from fastapi.responses import JSONResponse
 from typing import List, Optional
-from datetime import date
+from datetime import date, datetime
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 
@@ -9,12 +9,12 @@ from pydantic import BaseModel
 from app.models.booking import (
     RoomType, RoomSearchRequest, PriceCheckRequest, BookingHoldRequest,
     BookingConfirmRequest, RoomResponse, PriceBreakdownResponse, BookingResponse,
-    Room, Booking, BookingStatus
+    RoomDB, BookingDB, BookingStatus, GuestDetails, RoomBookingDetails, PricingBreakdown
 )
-from beanie.operators import And
+from app.database import get_supabase
 from app.services.booking_service import BookingService
 from app.auth import get_current_user, get_current_user_optional, get_current_active_user
-from app.models.user import User
+from app.models.user import UserDB
 import uuid
 import logging
 
@@ -37,6 +37,8 @@ async def search_rooms(
 ):
     """Search available rooms with filters"""
     try:
+        supabase = get_supabase()
+        
         # If dates are provided, validate them
         if start_date and end_date and start_date >= end_date:
             raise HTTPException(
@@ -47,43 +49,37 @@ async def search_rooms(
         # If no dates provided, just return all rooms
         if not start_date or not end_date:
             # Simple room listing without availability check
-            query_conditions = [Room.active == True]
+            query = supabase.table("rooms").select("*").eq("active", True).gte("max_occupancy", guests)
             
             if room_type:
-                query_conditions.append(Room.room_type == room_type)
+                query = query.eq("room_type", room_type.value)
             
             if min_price:
-                query_conditions.append(Room.base_price >= min_price)
+                query = query.gte("base_price", min_price)
             
             if max_price:
-                query_conditions.append(Room.base_price <= max_price)
+                query = query.lte("base_price", max_price)
             
-            # Filter by occupancy
-            query_conditions.append(Room.max_occupancy >= guests)
-            
-            if len(query_conditions) > 1:
-                rooms = await Room.find(And(*query_conditions)).to_list()
-            else:
-                rooms = await Room.find(query_conditions[0]).to_list()
+            result = query.execute()
             
             # Convert to response format
             room_responses = []
-            for room in rooms:
+            for room in result.data:
                 room_responses.append(RoomResponse(
-                    id=str(room.id),
-                    slug=room.slug,
-                    title=room.title,
-                    description=room.description,
-                    room_type=room.room_type,
-                    amenities=room.amenities,
-                    images=room.images,
-                    base_price=room.base_price,
-                    max_occupancy=room.max_occupancy,
-                    bed_configuration=room.bed_configuration,
-                    room_size=room.room_size,
-                    floor=room.floor,
-                    view=room.view,
-                    cancellation_policy=room.cancellation_policy,
+                    id=room["id"],
+                    slug=room["slug"],
+                    title=room["title"],
+                    description=room["description"],
+                    room_type=RoomType(room["room_type"]),
+                    amenities=room.get("amenities", []),
+                    images=room.get("images", []),
+                    base_price=room["base_price"],
+                    max_occupancy=room["max_occupancy"],
+                    bed_configuration=room["bed_configuration"],
+                    room_size=room["room_size"],
+                    floor=room["floor"],
+                    view=room["view"],
+                    cancellation_policy=room["cancellation_policy"],
                     available=True
                 ))
             
@@ -102,6 +98,8 @@ async def search_rooms(
         # Apply pagination
         return rooms[skip:skip + limit]
         
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Error searching rooms: {str(e)}")
         raise HTTPException(
@@ -113,28 +111,33 @@ async def search_rooms(
 async def get_room_details(slug: str):
     """Get detailed room information by slug"""
     try:
-        room = await Room.find_one(Room.slug == slug, Room.active == True)
-        if not room:
+        supabase = get_supabase()
+        
+        result = supabase.table("rooms").select("*").eq("slug", slug).eq("active", True).execute()
+        
+        if not result.data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Room not found"
             )
         
+        room = result.data[0]
+        
         return RoomResponse(
-            id=str(room.id),
-            slug=room.slug,
-            title=room.title,
-            description=room.description,
-            room_type=room.room_type,
-            amenities=room.amenities,
-            images=room.images,
-            base_price=room.base_price,
-            max_occupancy=room.max_occupancy,
-            bed_configuration=room.bed_configuration,
-            room_size=room.room_size,
-            floor=room.floor,
-            view=room.view,
-            cancellation_policy=room.cancellation_policy,
+            id=room["id"],
+            slug=room["slug"],
+            title=room["title"],
+            description=room["description"],
+            room_type=RoomType(room["room_type"]),
+            amenities=room.get("amenities", []),
+            images=room.get("images", []),
+            base_price=room["base_price"],
+            max_occupancy=room["max_occupancy"],
+            bed_configuration=room["bed_configuration"],
+            room_size=room["room_size"],
+            floor=room["floor"],
+            view=room["view"],
+            cancellation_policy=room["cancellation_policy"],
             available=True
         )
         
@@ -200,7 +203,7 @@ async def check_booking_price(request: Request, price_request: PriceCheckRequest
 async def create_booking_hold(
     request: Request, 
     hold_request: BookingHoldRequest,
-    current_user: Optional[User] = Depends(get_current_user_optional)
+    current_user: Optional[UserDB] = Depends(get_current_user_optional)
 ):
     """Create a temporary booking hold"""
     try:
@@ -234,18 +237,19 @@ async def create_booking_hold(
 @router.post("/bookings/confirm", response_model=BookingResponse)
 async def confirm_booking(
     confirm_request: BookingConfirmRequest,
-    current_user: Optional[User] = Depends(get_current_user_optional)
+    current_user: Optional[UserDB] = Depends(get_current_user_optional)
 ):
     """Confirm a booking hold"""
     try:
+        supabase = get_supabase()
+        
         booking = await BookingService.confirm_booking(confirm_request)
         
         # Link booking to user if authenticated
         if current_user:
-            booking_doc = await Booking.get(confirm_request.hold_token)
-            if booking_doc:
-                booking_doc.user_id = str(current_user.id)
-                await booking_doc.save()
+            supabase.table("bookings").update({
+                "user_id": str(current_user.id)
+            }).eq("id", confirm_request.hold_token).execute()
         
         return booking
         
@@ -265,18 +269,22 @@ async def confirm_booking(
 async def cancel_booking(
     booking_id: str,
     reason: str = "User cancelled",
-    current_user: Optional[User] = Depends(get_current_user_optional)
+    current_user: Optional[UserDB] = Depends(get_current_user_optional)
 ):
     """Cancel a booking"""
     try:
+        supabase = get_supabase()
+        
         # Check if user owns the booking (if authenticated)
         if current_user:
-            booking = await Booking.get(booking_id)
-            if booking and booking.user_id and booking.user_id != str(current_user.id):
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Not authorized to cancel this booking"
-                )
+            result = supabase.table("bookings").select("user_id").eq("id", booking_id).execute()
+            if result.data:
+                booking = result.data[0]
+                if booking.get("user_id") and booking["user_id"] != str(current_user.id):
+                    raise HTTPException(
+                        status_code=status.HTTP_403_FORBIDDEN,
+                        detail="Not authorized to cancel this booking"
+                    )
         
         result = await BookingService.cancel_booking(booking_id, reason)
         return result
@@ -298,34 +306,38 @@ async def cancel_booking(
 @router.get("/bookings/{booking_id}", response_model=BookingResponse)
 async def get_booking_details(
     booking_id: str,
-    current_user: Optional[User] = Depends(get_current_user_optional)
+    current_user: Optional[UserDB] = Depends(get_current_user_optional)
 ):
     """Get booking details"""
     try:
-        booking = await Booking.get(booking_id)
-        if not booking:
+        supabase = get_supabase()
+        
+        result = supabase.table("bookings").select("*").eq("id", booking_id).execute()
+        if not result.data:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Booking not found"
             )
         
+        booking = result.data[0]
+        
         # Check if user owns the booking (if authenticated)
-        if current_user and booking.user_id and booking.user_id != str(current_user.id):
+        if current_user and booking.get("user_id") and booking["user_id"] != str(current_user.id):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Not authorized to view this booking"
             )
         
         return BookingResponse(
-            id=str(booking.id),
-            booking_reference=booking.booking_reference,
-            status=booking.status,
-            payment_status=booking.payment_status,
-            guest_details=booking.guest_details,
-            room_bookings=booking.room_bookings,
-            pricing=booking.pricing,
-            created_at=booking.created_at,
-            hold_expires_at=booking.hold_expires_at
+            id=booking["id"],
+            booking_reference=booking["booking_reference"],
+            status=BookingStatus(booking["status"]),
+            payment_status=booking["payment_status"],
+            guest_details=GuestDetails(**booking["guest_details"]),
+            room_bookings=[RoomBookingDetails(**rb) for rb in booking["room_bookings"]],
+            pricing=PricingBreakdown(**booking["pricing"]),
+            created_at=datetime.fromisoformat(booking["created_at"].replace("Z", "")),
+            hold_expires_at=datetime.fromisoformat(booking["hold_expires_at"].replace("Z", "")) if booking.get("hold_expires_at") else None
         )
         
     except HTTPException:
@@ -339,35 +351,35 @@ async def get_booking_details(
 
 @router.get("/bookings", response_model=List[BookingResponse])
 async def get_user_bookings(
-    current_user: User = Depends(get_current_active_user),
+    current_user: UserDB = Depends(get_current_active_user),
     status_filter: Optional[BookingStatus] = Query(None, description="Filter by booking status"),
     skip: int = Query(0, ge=0, description="Skip records for pagination"),
     limit: int = Query(20, ge=1, le=100, description="Limit records")
 ):
     """Get user's bookings"""
     try:
-        query_conditions = [Booking.user_id == str(current_user.id)]
+        supabase = get_supabase()
+        
+        query = supabase.table("bookings").select("*").eq("user_id", str(current_user.id)).order("created_at", desc=True)
         
         if status_filter:
-            query_conditions.append(Booking.status == status_filter)
+            query = query.eq("status", status_filter.value)
         
-        bookings = await Booking.find(
-            *query_conditions
-        ).sort(-Booking.created_at).skip(skip).limit(limit).to_list()
+        result = query.range(skip, skip + limit - 1).execute()
         
         return [
             BookingResponse(
-                id=str(booking.id),
-                booking_reference=booking.booking_reference,
-                status=booking.status,
-                payment_status=booking.payment_status,
-                guest_details=booking.guest_details,
-                room_bookings=booking.room_bookings,
-                pricing=booking.pricing,
-                created_at=booking.created_at,
-                hold_expires_at=booking.hold_expires_at
+                id=booking["id"],
+                booking_reference=booking["booking_reference"],
+                status=BookingStatus(booking["status"]),
+                payment_status=booking["payment_status"],
+                guest_details=GuestDetails(**booking["guest_details"]),
+                room_bookings=[RoomBookingDetails(**rb) for rb in booking["room_bookings"]],
+                pricing=PricingBreakdown(**booking["pricing"]),
+                created_at=datetime.fromisoformat(booking["created_at"].replace("Z", "")),
+                hold_expires_at=datetime.fromisoformat(booking["hold_expires_at"].replace("Z", "")) if booking.get("hold_expires_at") else None
             )
-            for booking in bookings
+            for booking in result.data
         ]
         
     except Exception as e:

@@ -1,5 +1,4 @@
-from beanie import Document, Indexed
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime, date
 from enum import Enum
@@ -27,57 +26,16 @@ class PaymentStatus(str, Enum):
     FAILED = "failed"
 
 class CancellationPolicy(str, Enum):
-    FREE_48H = "free_48h"  # 48 hours before checkin
+    FREE_48H = "free_48h"
     NON_REFUNDABLE = "non_refundable"
     FLEXIBLE = "flexible"
 
+# Nested models
 class RoomImage(BaseModel):
     url: str
     alt: str
     is_primary: bool = False
     order: int = 1
-
-class Room(Document):
-    slug: Indexed(str, unique=True)
-    title: str
-    description: str
-    room_type: RoomType
-    amenities: List[str] = Field(default_factory=list)
-    images: List[RoomImage] = Field(default_factory=list)
-    base_price: float
-    max_occupancy: int
-    bed_configuration: str
-    room_size: str
-    floor: str
-    view: str
-    cancellation_policy: CancellationPolicy = CancellationPolicy.FREE_48H
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    active: bool = True
-    metadata: Dict[str, Any] = Field(default_factory=dict)
-    
-    class Settings:
-        name = "rooms"
-        indexes = [
-            [("slug", 1)],
-            [("room_type", 1)],
-            [("active", 1)],
-        ]
-
-class RoomInventory(Document):
-    room_id: str
-    date: date
-    available_count: int
-    locked_count: int = 0
-    price_override: Optional[float] = None
-    blocked_reason: Optional[str] = None
-    
-    class Settings:
-        name = "room_inventory"
-        indexes = [
-            [("room_id", 1), ("date", 1)],
-            [("date", 1)],
-        ]
 
 class GuestDetails(BaseModel):
     name: str
@@ -104,42 +62,73 @@ class PricingBreakdown(BaseModel):
     total_amount: float
     currency: str = "INR"
 
-class Booking(Document):
-    booking_reference: Indexed(str, unique=True) = Field(default="")
+# Database models (match Supabase table structure)
+class RoomDB(BaseModel):
+    """Room model for database operations"""
+    id: str
+    slug: str
+    title: str
+    description: str
+    room_type: RoomType
+    amenities: List[str] = Field(default_factory=list)
+    images: List[Dict[str, Any]] = Field(default_factory=list)
+    base_price: float
+    max_occupancy: int
+    bed_configuration: str
+    room_size: str
+    floor: str
+    view: str
+    cancellation_policy: CancellationPolicy = CancellationPolicy.FREE_48H
+    active: bool = True
+    room_metadata: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class RoomInventoryDB(BaseModel):
+    """Room inventory model for database operations"""
+    id: str
+    room_id: str
+    date: date
+    available_count: int
+    locked_count: int = 0
+    price_override: Optional[float] = None
+    blocked_reason: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
+class BookingDB(BaseModel):
+    """Booking model for database operations"""
+    id: str
+    booking_reference: str
     user_id: Optional[str] = None
-    guest_details: GuestDetails
-    additional_guests: List[GuestDetails] = Field(default_factory=list)
-    room_bookings: List[RoomBookingDetails]
+    guest_details: Dict[str, Any]
+    additional_guests: List[Dict[str, Any]] = Field(default_factory=list)
+    room_bookings: List[Dict[str, Any]]
     total_guests: int
     special_requests: Optional[str] = None
     status: BookingStatus = BookingStatus.PENDING
-    pricing: PricingBreakdown
+    pricing: Dict[str, Any]
     payment_status: PaymentStatus = PaymentStatus.PENDING
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
     idempotency_key: str
     hold_expires_at: Optional[datetime] = None
     check_in_time: str = "14:00"
     check_out_time: str = "12:00"
-    version: int = 1  # For optimistic locking
+    version: int = 1
+    created_at: datetime
+    updated_at: datetime
     
-    @validator('booking_reference', pre=True, always=True)
-    def generate_booking_reference(cls, v):
-        if not v or v == "":
-            return f"EH{datetime.now().year}{uuid.uuid4().hex[:8].upper()}"
-        return v
-    
-    class Settings:
-        name = "bookings"
-        indexes = [
-            [("booking_reference", 1)],
-            [("user_id", 1)],
-            [("status", 1)],
-            [("hold_expires_at", 1)],
-            [("created_at", -1)],
-        ]
+    class Config:
+        from_attributes = True
 
-class Payment(Document):
+class PaymentDB(BaseModel):
+    """Payment model for database operations"""
+    id: str
     booking_id: str
     provider: str = "razorpay"
     provider_payment_id: Optional[str] = None
@@ -148,21 +137,18 @@ class Payment(Document):
     currency: str = "INR"
     status: PaymentStatus = PaymentStatus.PENDING
     payment_method: Optional[str] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
     captured_at: Optional[datetime] = None
     failure_reason: Optional[str] = None
+    created_at: datetime
     
-    class Settings:
-        name = "payments"
-        indexes = [
-            [("booking_id", 1)],
-            [("provider_payment_id", 1)],
-            [("provider_order_id", 1)],
-        ]
+    class Config:
+        from_attributes = True
 
-class PromoCode(Document):
-    code: Indexed(str, unique=True)
-    discount_type: str = "percentage"  # percentage or fixed
+class PromoCodeDB(BaseModel):
+    """Promo code model for database operations"""
+    id: str
+    code: str
+    discount_type: str = "percentage"
     discount_value: float
     min_amount: float = 0
     max_discount: Optional[float] = None
@@ -172,35 +158,29 @@ class PromoCode(Document):
     used_count: int = 0
     active: bool = True
     applicable_room_types: List[str] = Field(default_factory=lambda: ["all"])
+    created_at: datetime
+    updated_at: datetime
     
-    class Settings:
-        name = "promo_codes"
-        indexes = [
-            [("code", 1)],
-            [("active", 1)],
-            [("valid_until", 1)],
-        ]
+    class Config:
+        from_attributes = True
 
-class AuditLog(Document):
+class AuditLogDB(BaseModel):
+    """Audit log model for database operations"""
+    id: str
     actor: str
     action: str
     resource: str
     resource_id: str
     before: Dict[str, Any] = Field(default_factory=dict)
     after: Dict[str, Any] = Field(default_factory=dict)
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     
-    class Settings:
-        name = "audit_logs"
-        indexes = [
-            [("resource", 1), ("resource_id", 1)],
-            [("timestamp", -1)],
-            [("actor", 1)],
-        ]
+    class Config:
+        from_attributes = True
 
-# Pydantic models for API requests/responses
+# API Request/Response models
 class RoomSearchRequest(BaseModel):
     start_date: date
     end_date: date
@@ -268,3 +248,11 @@ class PriceBreakdownResponse(BaseModel):
     currency: str
     nights: int
     available: bool
+
+# Aliases for backward compatibility
+Room = RoomDB
+RoomInventory = RoomInventoryDB
+Booking = BookingDB
+Payment = PaymentDB
+PromoCode = PromoCodeDB
+AuditLog = AuditLogDB

@@ -1,23 +1,21 @@
-from beanie import Document, Indexed
 from pydantic import BaseModel, EmailStr
 from datetime import datetime
 from typing import Optional
 
-class PendingRegistration(Document):
-    """Temporary storage for pending user registrations"""
-    email: EmailStr
+class PendingRegistrationDB(BaseModel):
+    """Pending registration model for database operations"""
+    id: str
+    email: str
     name: str
     password_hash: str
     phone: Optional[str] = None
-    country_code: str = "+91"  # Default to India
+    country_code: str = "+91"
     otp_code: str
     otp_expiry: datetime
-    created_at: Indexed(datetime, expireAfterSeconds=600) = datetime.utcnow()  # TTL index: expire after 10 minutes
+    created_at: datetime
     
-    class Settings:
-        name = "pending_registrations"
-        
     class Config:
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+        from_attributes = True
+
+# Alias for backward compatibility
+PendingRegistration = PendingRegistrationDB
