@@ -59,7 +59,7 @@ const HeroSection = () => {
         transition={{ duration: 1.5, ease: "easeOut" }}
       >
         <Image
-          src="/hero.jpg"
+          src="https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Night%20view.JPG"
           alt="Euro Hotel Luxury"
           fill
           className="object-cover"

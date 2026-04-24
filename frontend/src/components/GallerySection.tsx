@@ -6,32 +6,32 @@ import Image from 'next/image';
 const GallerySection = () => {
   const galleryImages = [
     {
-      url: "/room.jpg",
+      url: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-10.jpg?updatedAt=1777049081289",
       title: "Royal Suite",
       category: "Accommodation"
     },
     {
-      url: "/hero.jpg",
+      url: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-17.jpg?updatedAt=1777049081430",
       title: "Heritage Facade",
       category: "Architecture"
     },
     {
-      url: "/EVENT.jpg",
-      title: "Grand Ballroom",
+      url: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-12.jpg?updatedAt=1777049081347",
+      title: "Aesthetic Gallery",
       category: "Events"
     },
     {
-      url: "/CONFERENCE.jpg",
+      url: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-13.jpg?updatedAt=1777049081345",
       title: "Executive Boardroom",
       category: "Business"
     },
     {
-      url: "/beneath_booking_form.jpg",
+      url: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-3.jpg?updatedAt=1777049081345",
       title: "Luxury Interiors",
       category: "Design"
     },
     {
-      url: "/carousel_charminar.jpg",
+      url: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-6.jpg?updatedAt=1777049081301",
       title: "Historic Charminar",
       category: "Heritage"
     }

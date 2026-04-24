@@ -107,7 +107,7 @@ const BookingFormContent = () => {
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
-          src="https://images.unsplash.com/photo-1566665797739-1674de7a421a?ixlib=rb-4.0.3&auto=format&fit=crop&w=2000&q=80"
+          src="https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-5.jpg?updatedAt=1777049081263"
           alt="Luxury Hotel Room"
           fill
           className="object-cover"

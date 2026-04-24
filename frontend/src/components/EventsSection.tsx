@@ -63,7 +63,7 @@ const EventsSection = () => {
               <div 
                 className="h-64 bg-cover bg-center"
                 style={{
-                  backgroundImage: "url('https://images.unsplash.com/photo-1511578314322-379afb476865?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80')"
+                  backgroundImage: "url('https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-3.jpg?updatedAt=1777049081345')"
                 }}
               >
                 <div className="absolute inset-0 bg-navy-900 bg-opacity-30"></div>
@@ -79,7 +79,7 @@ const EventsSection = () => {
               <div 
                 className="h-40 bg-cover bg-center"
                 style={{
-                  backgroundImage: "url('https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')"
+                  backgroundImage: "url('https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-13.jpg?updatedAt=1777049081345')"
                 }}
               >
                 <div className="absolute inset-0 bg-navy-900 bg-opacity-30"></div>
@@ -94,7 +94,7 @@ const EventsSection = () => {
               <div 
                 className="h-40 bg-cover bg-center"
                 style={{
-                  backgroundImage: "url('https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80')"
+                  backgroundImage: "url('https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-18.jpg?updatedAt=1777049081250')"
                 }}
               >
                 <div className="absolute inset-0 bg-navy-900 bg-opacity-30"></div>

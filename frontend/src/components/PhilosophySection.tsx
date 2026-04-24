@@ -91,7 +91,7 @@ const PhilosophySection = () => {
               >
                 <div className="h-64 relative">
                   <Image
-                    src="/room.jpg"
+                    src="https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-2.jpg?updatedAt=1777049081297"
                     alt="Luxury Experience"
                     fill
                     className="object-cover"
@@ -118,7 +118,7 @@ const PhilosophySection = () => {
               >
                 <div className="h-40 relative">
                   <Image
-                    src="/CONFERENCE.jpg"
+                    src="https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-13.jpg?updatedAt=1777049081345"
                     alt="Modern Sophistication"
                     fill
                     className="object-cover"
@@ -139,7 +139,7 @@ const PhilosophySection = () => {
               >
                 <div className="h-40 relative">
                   <Image
-                    src="/EVENT.jpg"
+                    src="https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-15.jpg?updatedAt=1777049081306"
                     alt="Warmth & Belonging"
                     fill
                     className="object-cover"

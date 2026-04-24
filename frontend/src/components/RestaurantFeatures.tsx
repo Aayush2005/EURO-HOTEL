@@ -24,50 +24,42 @@ const RestaurantFeatures = () => {
     {
       title: "Multi-Cuisine Restaurant",
       description: "Savor authentic flavors from Indian, Chinese, and Continental cuisines",
-      image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      icon: "🍽️"
+      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20-%20Food%20Shots%20Insta-cdn/Euro%20Hotels%20food%20Insta-15.jpg?updatedAt=1777049047739",
     },
     {
       title: "Private Dining Areas",
       description: "Two exclusive private dining spaces for 18 & 15 guests",
-      image: "https://images.unsplash.com/photo-1551632436-cbf8dd35adfa?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      icon: "🥂"
+      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-13.jpg?updatedAt=1777049081345",
     },
     {
       title: "Mocktail Bar",
       description: "Refreshing mocktails crafted by expert mixologists",
       image: "https://images.unsplash.com/photo-1551024506-0bccd828d307?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      icon: "🍹"
     },
     {
       title: "Live Kitchen",
       description: "Watch our chefs create culinary masterpieces before your eyes",
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      icon: "👨‍🍳"
+      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20-%20Food%20Shots%20Insta-cdn/image.png?updatedAt=1777052984122",
     },
     {
       title: "Ice Cream Parlour",
       description: "Artisanal ice creams and frozen delights",
       image: "https://images.unsplash.com/photo-1567206563064-6f60f40a2b57?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      icon: "🍦"
     },
     {
-      title: "Pan Counter",
+      title: "Paan Counter",
       description: "Fresh paan and traditional mouth fresheners",
       image: "https://images.unsplash.com/photo-1626132647523-66f5bf380027?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      icon: "🌿"
     },
     {
       title: "Take Away Counter",
       description: "Quick service for guests on the go",
-      image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      icon: "📦"
+      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20-%20Food%20Shots%20Insta-cdn/image.png?updatedAt=1777053096211",
     },
     {
       title: "24×7 Barista",
       description: "Premium coffee and beverages available round the clock",
-      image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-      icon: "☕"
+      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20-%20Food%20Shots%20Insta-cdn/image.png",
     }
   ];
 
@@ -129,9 +121,6 @@ const RestaurantFeatures = () => {
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-navy/80 via-navy/20 to-transparent"></div>
-                <div className="absolute top-4 right-4 text-2xl bg-white/20 backdrop-blur-sm rounded-full w-12 h-12 flex items-center justify-center">
-                  {feature.icon}
-                </div>
               </div>
               <div className="p-6">
                 <h3 className="font-serif text-xl font-medium text-navy mb-3 group-hover:text-gold transition-colors duration-300">
