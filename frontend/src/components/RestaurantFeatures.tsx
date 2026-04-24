@@ -39,7 +39,7 @@ const RestaurantFeatures = () => {
     {
       title: "Live Kitchen",
       description: "Watch our chefs create culinary masterpieces before your eyes",
-      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20-%20Food%20Shots%20Insta-cdn/image.png?updatedAt=1777052984122",
+      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20-%20Food%20Shots%20Insta-cdn/kitchen.png?updatedAt=1777054521759",
     },
     {
       title: "Ice Cream Parlour",
@@ -59,7 +59,7 @@ const RestaurantFeatures = () => {
     {
       title: "24×7 Barista",
       description: "Premium coffee and beverages available round the clock",
-      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20-%20Food%20Shots%20Insta-cdn/image.png",
+      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20-%20Food%20Shots%20Insta-cdn/barista.png?updatedAt=1777054521740",
     }
   ];
 
