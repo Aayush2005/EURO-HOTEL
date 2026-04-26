@@ -71,9 +71,11 @@ const LazyImage: React.FC<LazyImageProps> = ({
     setIsLoaded(true);
   };
 
-  const imageUrl = hasError && fallbackSrc 
-    ? fallbackSrc 
-    : getCloudinaryUrl(publicId, { width, height, quality, format, crop, gravity });
+  const imageUrl = hasError && fallbackSrc
+    ? fallbackSrc
+    : publicId.startsWith('http')
+      ? publicId
+      : getCloudinaryUrl(publicId, { width, height, quality, format, crop, gravity });
 
   return (
     <div ref={containerRef} className={`relative overflow-hidden ${className}`}>

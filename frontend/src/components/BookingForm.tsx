@@ -5,91 +5,73 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
 
+interface RoomOption {
+  room_type: string;
+  room_base_price: number;
+}
+
 const BookingFormContent = () => {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
-  
+  const [rooms, setRooms] = useState<RoomOption[]>([]);
+
   const [formData, setFormData] = useState({
     checkIn: '',
     checkOut: '',
     guests: '2',
-    roomType: 'deluxe'
+    roomType: ''
   });
 
-  // Handle room pre-selection from URL
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/rooms/`,
+          { headers: { 'x-api-key': process.env.NEXT_PUBLIC_API_KEY || '' } }
+        );
+        if (res.ok) {
+          const data: RoomOption[] = await res.json();
+          setRooms(data);
+          setFormData(prev => ({ ...prev, roomType: prev.roomType || data[0]?.room_type || '' }));
+        }
+      } catch {
+        // silently fail — form still works without room list
+      }
+    };
+    fetchRooms();
+  }, []);
+
+  // Handle room pre-selection and scroll from URL
   useEffect(() => {
     const roomParam = searchParams.get('room');
-    if (roomParam && ['standard', 'deluxe', 'suite', 'presidential'].includes(roomParam)) {
-      setFormData(prev => ({ ...prev, roomType: roomParam }));
-    }
-    
-    // Scroll to booking form if requested
+    if (roomParam) setFormData(prev => ({ ...prev, roomType: roomParam }));
+
     const scrollParam = searchParams.get('scroll');
     if (scrollParam === 'booking') {
       setTimeout(() => {
-        const bookingElement = document.getElementById('booking-form');
-        if (bookingElement) {
-          bookingElement.scrollIntoView({ behavior: 'smooth' });
-        }
+        document.getElementById('booking-form')?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     }
   }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     setLoading(true);
     setMessage('');
 
     try {
-      // Calculate total amount (simplified pricing)
-      const roomPrices: { [key: string]: number } = {
-        standard: 8500,
-        deluxe: 12500,
-        suite: 18500,
-        presidential: 35000,
-      };
-
-      const checkInDate = new Date(formData.checkIn);
-      const checkOutDate = new Date(formData.checkOut);
-      const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
-      const totalAmount = roomPrices[formData.roomType] * nights;
-
-      // Log booking data for FastAPI integration
-      console.log('Booking Data for FastAPI:', {
-        roomType: formData.roomType,
-        checkIn: formData.checkIn,
-        checkOut: formData.checkOut,
-        guests: parseInt(formData.guests),
-        totalAmount,
-        nights
-      });
-
-      // Simulate processing time
-      // Redirect to rooms page with filters
-      const roomTypeMap: { [key: string]: string } = {
-        standard: 'standard',
-        deluxe: 'deluxe', 
-        suite: 'suite',
-        presidential: 'presidential'
-      };
-      
       const params = new URLSearchParams({
         start_date: formData.checkIn,
         end_date: formData.checkOut,
         guests: formData.guests,
-        room_type: roomTypeMap[formData.roomType] || ''
+        room_type: formData.roomType,
       });
-      
+
       setMessage('Redirecting to available rooms...');
-      
-      // Redirect to rooms page
-      setTimeout(() => {
-        window.location.href = `/rooms?${params.toString()}`;
-      }, 1000);
+      setTimeout(() => { window.location.href = `/rooms?${params.toString()}`; }, 800);
     } catch (err: unknown) {
-      setMessage(err instanceof Error ? err.message : 'An error occurred while processing your booking.');
+      setMessage(err instanceof Error ? err.message : 'An error occurred.');
     } finally {
       setLoading(false);
     }
@@ -208,11 +190,17 @@ const BookingFormContent = () => {
                     value={formData.roomType}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gold-500 transition-colors"
+                    disabled={rooms.length === 0}
                   >
-                    <option value="standard">Standard Comfort Room - ₹8,500/night</option>
-                    <option value="deluxe">Deluxe Comfort Room - ₹12,500/night</option>
-                    <option value="suite">Executive Suite - ₹18,500/night</option>
-                    <option value="presidential">Presidential Suite - ₹35,000/night</option>
+                    {rooms.length === 0 ? (
+                      <option>Loading rooms...</option>
+                    ) : (
+                      rooms.map(r => (
+                        <option key={r.room_type} value={r.room_type}>
+                          {r.room_type} — ₹{r.room_base_price.toLocaleString()}/night
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
               </div>

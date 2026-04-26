@@ -15,47 +15,40 @@ import SimplePageWrapper from '@/components/SimplePageWrapper';
 import LazyImage from '@/components/LazyImage';
 import OrbitalLoader from '@/components/OrbitalLoader';
 import ComingSoon from '@/components/ComingSoon';
-import { getCloudinaryUrl, roomImages } from '@/lib/cloudinary';
 import { PAGE_CONFIG } from '@/lib/page-config';
+import { getRoomImages as getRoomImageUrls } from '@/lib/room-images';
 
 
 interface RoomImage {
-  url: string;
+  publicId: string;
   alt: string;
   is_primary: boolean;
   order: number;
 }
 
 interface Room {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
   room_type: string;
-  amenities: string[];
-  images: RoomImage[];
-  base_price: number;
+  room_base_price: number;
+  tax_percent: number;
+  room_final_price: number;
   max_occupancy: number;
-  bed_configuration: string;
-  room_size: string;
-  floor: string;
-  view: string;
-  cancellation_policy: string;
+  available_rooms: number;
+  amenities: string[];
+  description: string;
+  images: RoomImage[];
 }
 
 
 
 
 
-const getRoomImages = (roomType: string) => {
-  const imageIds = roomImages[roomType as keyof typeof roomImages] || roomImages.standard;
-  return imageIds.map((publicId, index) => ({
-    publicId,
+const buildRoomImages = (roomType: string): RoomImage[] =>
+  getRoomImageUrls(roomType).map((url, index) => ({
+    publicId: url,
     alt: `${roomType} room view ${index + 1}`,
     is_primary: index === 0,
-    order: index + 1
+    order: index + 1,
   }));
-};
 
 export default function RoomDetailsPage() {
   const params = useParams();
@@ -85,16 +78,16 @@ export default function RoomDetailsPage() {
     const fetchRoom = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/rooms/${slug}`);
-        
+        const response = await fetch(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/rooms/${slug}`,
+          { headers: { 'x-api-key': process.env.NEXT_PUBLIC_API_KEY || '' } }
+        );
+
         if (response.ok) {
           const roomData = await response.json();
-          roomData.images = getRoomImages(roomData.room_type);
+          roomData.images = buildRoomImages(roomData.room_type);
           setRoom(roomData);
         } else {
-          console.error('Failed to fetch room:', response.status);
-          const errorText = await response.text();
-          console.error('Error response:', errorText);
           setRoom(null);
         }
       } catch (error) {
@@ -164,7 +157,7 @@ export default function RoomDetailsPage() {
   const getCancellationPolicyText = (policy: string) => {
     switch (policy) {
       case 'free_24h':
-        return 'Free cancellation up to 24 hours before check-in';
+        return 'Free cancellation up to 48 hours before check-in';
       case 'flexible':
         return 'Flexible cancellation with partial refund';
       case 'non_refundable':
@@ -230,7 +223,7 @@ export default function RoomDetailsPage() {
     );
   }
 
-  if (!room && !loading) {
+  if (!room) {
     return (
       <div className="min-h-screen bg-off-white">
         <SolidHeader />
@@ -277,7 +270,7 @@ export default function RoomDetailsPage() {
               <span>/</span>
               <a href="/rooms" className="hover:text-gold-600">Rooms</a>
               <span>/</span>
-              <span className="text-navy-900 font-medium">{room.title}</span>
+              <span className="text-navy-900 font-medium">{room.room_type}</span>
             </div>
           </nav>
 
@@ -291,8 +284,8 @@ export default function RoomDetailsPage() {
             <div className="relative h-96 md:h-[500px]">
               <LazyImage
                 key={selectedImageIndex}
-                publicId={room.images[selectedImageIndex]?.publicId || roomImages.standard[0]}
-                alt={room.images[selectedImageIndex]?.alt || room.title}
+                publicId={room.images[selectedImageIndex]?.publicId || getRoomImageUrls(room.room_type)[0]}
+                alt={room.images[selectedImageIndex]?.alt || room.room_type}
                 width={1200}
                 height={500}
                 className="w-full h-full object-cover"
@@ -316,15 +309,6 @@ export default function RoomDetailsPage() {
                   </button>
                 </>
               )}
-              
-              {/* View All Photos Button */}
-              <button
-                onClick={() => setIsLightboxOpen(true)}
-                className="absolute bottom-4 right-4 bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg hover:bg-opacity-70 transition-all flex items-center space-x-2"
-              >
-                <Eye size={16} />
-                <span>View All Photos ({room.images.length})</span>
-              </button>
               
               {/* Progress Indicators */}
               {room.images.length > 1 && (
@@ -352,15 +336,6 @@ export default function RoomDetailsPage() {
                 </div>
               )}
               
-              {/* Auto-play control */}
-              {room.images.length > 1 && (
-                <button
-                  onClick={() => setIsAutoPlaying(!isAutoPlaying)}
-                  className="absolute top-4 left-4 bg-black bg-opacity-50 text-white px-3 py-1 rounded-lg hover:bg-opacity-70 transition-all text-sm"
-                >
-                  {isAutoPlaying ? 'Pause' : 'Play'}
-                </button>
-              )}
             </div>
           </motion.div>
 
@@ -373,21 +348,13 @@ export default function RoomDetailsPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <h1 className="text-4xl font-serif font-bold text-navy-900 mb-4">
-                {room.title}
+                {room.room_type.charAt(0).toUpperCase() + room.room_type.slice(1)} Room
               </h1>
-              
+
               <div className="flex items-center space-x-6 mb-6 text-charcoal-600">
                 <div className="flex items-center space-x-2">
                   <Users size={18} />
                   <span>Up to {room.max_occupancy} guests</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Bed size={18} />
-                  <span>{room.bed_configuration}</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <MapPin size={18} />
-                  <span>{room.room_size}</span>
                 </div>
               </div>
 
@@ -395,26 +362,6 @@ export default function RoomDetailsPage() {
                 {room.description}
               </p>
 
-              {/* Room Features */}
-              <div className="mb-8">
-                <h3 className="text-2xl font-serif font-semibold text-navy-900 mb-4">
-                  Room Features
-                </h3>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <div className="flex items-center space-x-2 text-charcoal-700">
-                    <MapPin className="text-gold-600" size={18} />
-                    <span>{room.floor}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-charcoal-700">
-                    <Eye className="text-gold-600" size={18} />
-                    <span>{room.view}</span>
-                  </div>
-                  <div className="flex items-center space-x-2 text-charcoal-700">
-                    <Bed className="text-gold-600" size={18} />
-                    <span>{room.bed_configuration}</span>
-                  </div>
-                </div>
-              </div>
 
               {/* Amenities */}
               <div className="mb-8">
@@ -445,7 +392,7 @@ export default function RoomDetailsPage() {
                   </div>
                   <div className="flex items-center space-x-3 text-charcoal-700">
                     <Shield className="text-gold-600" size={18} />
-                    <span>{getCancellationPolicyText(room.cancellation_policy)}</span>
+                    <span>Free cancellation up to 48 hours before check-in</span>
                   </div>
                 </div>
               </div>
@@ -461,19 +408,19 @@ export default function RoomDetailsPage() {
               <div className="premium-card p-6 sticky top-24">
                 <div className="text-center mb-6">
                   <div className="text-3xl font-bold text-navy-900 mb-2">
-                    ₹{room.base_price.toLocaleString()}
+                    ₹{room.room_base_price.toLocaleString()}
                   </div>
                   <div className="text-charcoal-600">per night</div>
                   <div className="text-sm text-charcoal-500 mt-1">
-                    + 18% GST & service charges
+                    + {room.tax_percent}% GST & service charges
                   </div>
                 </div>
 
                 <button
-                  onClick={() => setIsBookingModalOpen(true)}
-                  className="w-full btn-gold py-4 text-lg font-semibold mb-4"
+                  disabled
+                  className="w-full py-4 text-lg font-semibold mb-4 bg-gray-200 text-gray-400 cursor-not-allowed rounded"
                 >
-                  Book Now
+                  Book Now — Coming Soon
                 </button>
 
                 <div className="text-center text-sm text-charcoal-600 mb-4">
@@ -511,8 +458,8 @@ export default function RoomDetailsPage() {
             
             <div className="relative">
               <LazyImage
-                publicId={room.images[selectedImageIndex]?.publicId || roomImages.standard[0]}
-                alt={room.images[selectedImageIndex]?.alt || room.title}
+                publicId={room.images[selectedImageIndex]?.publicId || getRoomImageUrls(room.room_type)[0]}
+                alt={room.images[selectedImageIndex]?.alt || room.room_type}
                 width={1200}
                 height={800}
                 className="max-w-full max-h-[80vh] object-contain"
@@ -544,12 +491,6 @@ export default function RoomDetailsPage() {
         </div>
       )}
 
-      {/* Booking Modal */}
-      <BookingModal
-        isOpen={isBookingModalOpen}
-        onClose={() => setIsBookingModalOpen(false)}
-        room={room}
-      />
       </div>
     </SimplePageWrapper>
   );

@@ -11,27 +11,16 @@ import OrbitalLoader from '@/components/OrbitalLoader';
 import RoomCardSkeleton from '@/components/skeletons/RoomCardSkeleton';
 import RoomCard from '@/components/RoomCard';
 // import { useProgressiveLoading } from '@/hooks/useInfiniteScroll'; // Temporarily disabled for debugging
-import { heroImages } from '@/lib/cloudinary';
 
 
 interface Room {
-  id: string;
-  slug: string;
-  title: string;
-  description: string;
   room_type: string;
+  room_base_price: number;
+  tax_percent: number;
+  room_final_price: number;
+  available_rooms: number;
   amenities: string[];
-  images: Array<{
-    url: string;
-    alt: string;
-    is_primary: boolean;
-  }>;
-  base_price: number;
-  max_occupancy: number;
-  bed_configuration: string;
-  room_size: string;
-  view: string;
-  available: boolean;
+  description: string;
 }
 
 
@@ -58,17 +47,6 @@ export default function RoomsPage() {
     setVisibleCount(prev => Math.min(prev + 3, filteredRooms.length));
   };
 
-  console.log('Visible rooms:', visibleRooms.length);
-  console.log('Filtered rooms:', filteredRooms.length);
-  console.log('All rooms:', allRooms.length);
-  
-  // Debug: Check for duplicates in the arrays
-  const visibleRoomIds = visibleRooms.map(r => r.id);
-  const uniqueVisibleIds = [...new Set(visibleRoomIds)];
-  if (visibleRoomIds.length !== uniqueVisibleIds.length) {
-    console.error('Duplicates found in visibleRooms:', visibleRoomIds.length, 'total,', uniqueVisibleIds.length, 'unique');
-  }
-  
   // Reset visible count when filtered rooms change
   useEffect(() => {
     setVisibleCount(3);
@@ -81,10 +59,6 @@ export default function RoomsPage() {
       filtered = filtered.filter(room => room.room_type === filters.room_type);
     }
     
-    if (filters.guests > 1) {
-      filtered = filtered.filter(room => room.max_occupancy >= filters.guests);
-    }
-    
     setFilteredRooms(filtered);
   };
 
@@ -92,22 +66,18 @@ export default function RoomsPage() {
     const fetchRooms = async () => {
       try {
         setLoading(true);
-        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/rooms`;
-        console.log('Environment API URL:', process.env.NEXT_PUBLIC_API_URL);
-        console.log('Fetching rooms from:', apiUrl);
-        
-        const response = await fetch(apiUrl);
-        console.log('Response status:', response.status);
-        
+        const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/rooms/`;
+        const response = await fetch(apiUrl, {
+          headers: {
+            'x-api-key': process.env.NEXT_PUBLIC_API_KEY || '',
+          },
+        });
+
         if (response.ok) {
           const roomsData = await response.json();
-          console.log('Fetched rooms:', roomsData.length, 'rooms');
           setAllRooms(roomsData);
           setFilteredRooms(roomsData);
         } else {
-          console.error('API request failed with status:', response.status);
-          const errorText = await response.text();
-          console.error('Error response:', errorText);
           setAllRooms([]);
           setFilteredRooms([]);
         }
@@ -127,9 +97,6 @@ export default function RoomsPage() {
     // Only process URL filters after rooms are loaded
     if (allRooms.length === 0) return;
     
-    console.log('All rooms:', allRooms.length);
-    console.log('Filtered rooms:', filteredRooms.length);
-    
     const urlParams = new URLSearchParams(window.location.search);
     const urlFilters = {
       start_date: urlParams.get('start_date') || '',
@@ -146,10 +113,6 @@ export default function RoomsPage() {
       if (urlFilters.room_type) {
         filtered = filtered.filter(room => room.room_type === urlFilters.room_type);
       }
-      if (urlFilters.guests > 1) {
-        filtered = filtered.filter(room => room.max_occupancy >= urlFilters.guests);
-      }
-      console.log('Filtered rooms after URL params:', filtered.length);
       setFilteredRooms(filtered);
     }
   }, [allRooms]);
@@ -211,7 +174,7 @@ export default function RoomsPage() {
             transition={{ duration: 1.5 }}
           >
             <LazyImage
-              publicId={heroImages.rooms}
+              publicId="https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-7.jpg?updatedAt=1777049081226"
               alt="Luxury Hotel Rooms"
               width={1200}
               height={600}
@@ -284,22 +247,14 @@ export default function RoomsPage() {
 
             {/* Rooms Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {visibleRooms.map((room, index) => {
-                // Debug: Check for duplicates
-                const duplicateCount = visibleRooms.filter(r => r.id === room.id).length;
-                if (duplicateCount > 1) {
-                  console.warn(`Duplicate room found: ${room.id} appears ${duplicateCount} times`);
-                }
-                
-                return (
-                  <RoomCard
-                    key={room.id}
-                    room={room}
-                    index={index}
-                    getRoomTypeLabel={getRoomTypeLabel}
-                  />
-                );
-              })}
+              {visibleRooms.map((room, index) => (
+                <RoomCard
+                  key={room.room_type}
+                  room={room}
+                  index={index}
+                  getRoomTypeLabel={getRoomTypeLabel}
+                />
+              ))}
             </div>
 
             {/* Load More Button */}
