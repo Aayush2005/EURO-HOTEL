@@ -1,6 +1,5 @@
 from psycopg.rows import dict_row
 from psycopg_pool import AsyncConnectionPool
-from urllib.parse import quote_plus
 
 from app.config import settings
 
@@ -8,24 +7,28 @@ from app.config import settings
 pool: AsyncConnectionPool | None = None
 
 
-def _build_connection_string() -> str:
-    if settings.supabase_connection_string:
-        return settings.supabase_connection_string
+def _escape_conninfo_value(value: str) -> str:
+    """Escape single quotes and backslashes in a conninfo key=value string."""
+    return value.replace("\\", "\\\\").replace("'", "\\'")
 
+
+def _build_connection_string() -> str:
     if (
         settings.supabase_host
         and settings.supabase_user
         and settings.supabase_password
         and settings.supabase_database
     ):
-        encoded_user = quote_plus(settings.supabase_user)
-        encoded_password = quote_plus(settings.supabase_password)
+        # Use key=value format — safe for passwords containing @ # and other URL-special chars
         return (
-            f"postgresql://{encoded_user}:{encoded_password}"
-            f"@{settings.supabase_host}:{settings.supabase_port}/{settings.supabase_database}"
+            f"host={_escape_conninfo_value(settings.supabase_host)} "
+            f"port={settings.supabase_port} "
+            f"dbname={_escape_conninfo_value(settings.supabase_database)} "
+            f"user='{_escape_conninfo_value(settings.supabase_user)}' "
+            f"password='{_escape_conninfo_value(settings.supabase_password)}'"
         )
 
-    raise RuntimeError("Supabase transaction pooler credentials are not configured")
+    raise RuntimeError("Supabase credentials are not configured")
 
 
 async def connect_pool() -> None:
