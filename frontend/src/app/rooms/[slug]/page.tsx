@@ -416,12 +416,12 @@ export default function RoomDetailsPage() {
                   </div>
                 </div>
 
-                <button
-                  disabled
-                  className="w-full py-4 text-lg font-semibold mb-4 bg-gray-200 text-gray-400 cursor-not-allowed rounded"
+                <a
+                  href="tel:+917729900091"
+                  className="w-full btn-gold py-4 text-lg font-semibold mb-4 text-center block"
                 >
-                  Book Now — Coming Soon
-                </button>
+                  For Booking Call +91 77299 00091
+                </a>
 
                 <div className="text-center text-sm text-charcoal-600 mb-4">
                   Free cancellation • No booking fees

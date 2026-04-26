@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 
 const Footer = () => {
   return (
@@ -80,7 +81,7 @@ const Footer = () => {
               </div>
               <div>
                 <p className="font-medium text-white mb-1">Email</p>
-                <p>rudraramreservations@eurohotel.in</p>
+                <p>reservations@eurohotel.in</p>
               </div>
             </div>
           </div>
@@ -90,8 +91,8 @@ const Footer = () => {
         <div className="border-t border-gray-700 mt-16 pt-8 flex flex-col md:flex-row justify-between items-center text-gray-400">
           <p className="font-light">&copy; 2026 Euro Hotel. All rights reserved.</p>
           <div className="flex space-x-6 mt-4 md:mt-0">
-            <a href="#" className="hover:text-yellow-400 transition-colors font-light">Privacy Policy</a>
-            <a href="#" className="hover:text-yellow-400 transition-colors font-light">Terms of Service</a>
+            <Link href="/privacy-policy" className="hover:text-yellow-400 transition-colors font-light">Privacy Policy</Link>
+            <Link href="/terms-of-service" className="hover:text-yellow-400 transition-colors font-light">Terms of Service</Link>
           </div>
         </div>
       </div>

@@ -118,7 +118,7 @@ const PhilosophySection = () => {
               >
                 <div className="h-40 relative">
                   <Image
-                    src="https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-13.jpg?updatedAt=1777049081345"
+                    src="https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-20.jpg?updatedAt=1777049081266"
                     alt="Modern Sophistication"
                     fill
                     className="object-cover"
