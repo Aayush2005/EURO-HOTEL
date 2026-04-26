@@ -14,7 +14,6 @@ from app.auth import (
     create_access_token, create_refresh_token, verify_token, generate_otp,
     get_current_active_user, get_user_by_email, get_user_by_id
 )
-from app.database import get_supabase
 from app.email import send_otp_email
 from app.config import settings
 import logging

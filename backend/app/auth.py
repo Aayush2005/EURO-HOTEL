@@ -5,7 +5,6 @@ from passlib.context import CryptContext
 from fastapi import HTTPException, status, Depends, Request
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.models.user import UserDB, UserStatus
-from app.database import get_supabase
 from app.config import settings
 import secrets
 import string

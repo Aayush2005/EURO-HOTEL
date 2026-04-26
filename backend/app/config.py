@@ -1,28 +1,40 @@
 from pydantic_settings import BaseSettings
 from typing import List
 import os
-from dotenv import load_dotenv
+from pathlib import Path
+import logging
 
-load_dotenv()
+logger = logging.getLogger(__name__)
+ENV_FILE = Path(__file__).resolve().parents[1] / ".env"
+
+
+def _load_env_file() -> None:
+    """Load .env in a simple, predictable way (supports # in values)."""
+    if not ENV_FILE.exists():
+        logger.warning("Config file not found: %s", ENV_FILE)
+        return
+
+    for raw_line in ENV_FILE.read_text().splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        os.environ[key.strip()] = value.strip().strip('"').strip("'")
+
+
+_load_env_file()
+logger.info("Loading config from %s (exists=%s)", ENV_FILE, ENV_FILE.exists())
 
 class Settings(BaseSettings):
     # Supabase Configuration
-    supabase_url: str = os.getenv("SUPABASE_URL", "")
-    supabase_key: str = os.getenv("SUPABASE_KEY", "")  # Use service_role key for backend
+    supabase_host: str = os.getenv("SUPABASE_HOST", "")
+    supabase_port: int = int(os.getenv("SUPABASE_PORT", "6543"))
+    supabase_database: str = os.getenv("SUPABASE_DATABASE", "postgres")
+    supabase_user: str = os.getenv("SUPABASE_USER", "")
+    supabase_password: str = os.getenv("SUPABASE_PASSWORD", "")
+    supabase_connection_string: str = os.getenv("SUPABASE_CONNECTION_STRING", "")
     
-    # JWT
-    jwt_secret_key: str = os.getenv("JWT_SECRET_KEY")
-    jwt_refresh_secret_key: str = os.getenv("JWT_REFRESH_SECRET_KEY")
-    jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 30
-    refresh_token_expire_days: int = 7
-    
-    # SMTP
-    smtp_host: str = os.getenv("SMTP_HOST", "smtp.gmail.com")
-    smtp_port: int = int(os.getenv("SMTP_PORT", "587"))
-    smtp_username: str = os.getenv("SMTP_USERNAME", "")
-    smtp_password: str = os.getenv("SMTP_PASSWORD", "")
-    
+     
     # CORS
     frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
     allowed_origins: List[str] = [
@@ -36,22 +48,12 @@ class Settings(BaseSettings):
     # OTP
     otp_expire_minutes: int = 10
     
-    # Razorpay
-    razorpay_key_id: str = os.getenv("RAZORPAY_KEY_ID", "")
-    razorpay_key_secret: str = os.getenv("RAZORPAY_KEY_SECRET", "")
-    razorpay_webhook_secret: str = os.getenv("RAZORPAY_WEBHOOK_SECRET", "")
-    
-    # Booking
-    hold_expiry_minutes: int = 15
-    default_currency: str = "INR"
-    
-    # Cloudinary
-    cloudinary_cloud_name: str = os.getenv("CLOUDINARY_CLOUD_NAME", "")
-    cloudinary_api_key: str = os.getenv("CLOUDINARY_API_KEY", "")
-    cloudinary_api_secret: str = os.getenv("CLOUDINARY_API_SECRET", "")
+    # API Key
+    api_key: str = os.getenv("API_KEY", "")
     
     class Config:
-        env_file = ".env"
+        env_file = str(ENV_FILE)
         extra = "ignore"  # Ignore extra fields like old MONGODB_URI
 
 settings = Settings()
+logger.info("Config loaded (api_key_configured=%s)", bool(settings.api_key))
