@@ -59,3 +59,17 @@ async def fetch_all(query: str, params: tuple = ()) -> list[dict]:
             await cur.execute(query, params)
             rows = await cur.fetchall()
             return list(rows)
+
+
+async def fetch_one(query: str, *args) -> dict | None:
+    if pool is None:
+        await connect_pool()
+
+    if pool is None:
+        raise RuntimeError("Transaction pool is not initialized")
+
+    params = args[0] if len(args) == 1 and isinstance(args[0], tuple) else args
+    async with pool.connection() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(query, params)
+            return await cur.fetchone()
