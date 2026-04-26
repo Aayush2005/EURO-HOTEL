@@ -9,6 +9,9 @@ pool: AsyncConnectionPool | None = None
 
 
 def _build_connection_string() -> str:
+    if settings.supabase_connection_string:
+        return settings.supabase_connection_string
+
     if (
         settings.supabase_host
         and settings.supabase_user
@@ -21,9 +24,6 @@ def _build_connection_string() -> str:
             f"postgresql://{encoded_user}:{encoded_password}"
             f"@{settings.supabase_host}:{settings.supabase_port}/{settings.supabase_database}"
         )
-
-    if settings.supabase_connection_string:
-        return settings.supabase_connection_string
 
     raise RuntimeError("Supabase transaction pooler credentials are not configured")
 
