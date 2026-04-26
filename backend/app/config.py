@@ -37,10 +37,16 @@ class Settings(BaseSettings):
      
     # CORS
     frontend_url: str = os.getenv("FRONTEND_URL", "http://localhost:3000")
-    allowed_origins: List[str] = [
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-    ]
+
+    @property
+    def allowed_origins(self) -> List[str]:
+        origins = [
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ]
+        if self.frontend_url and self.frontend_url not in origins:
+            origins.append(self.frontend_url)
+        return origins
     
     # Rate limiting
     rate_limit_per_minute: int = 5
