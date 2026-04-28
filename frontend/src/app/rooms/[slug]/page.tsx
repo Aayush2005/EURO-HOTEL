@@ -348,7 +348,7 @@ export default function RoomDetailsPage() {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <h1 className="text-4xl font-serif font-bold text-navy-900 mb-4">
-                {room.room_type.charAt(0).toUpperCase() + room.room_type.slice(1)} Room
+                {room.room_type.charAt(0).toUpperCase() + room.room_type.slice(1)}
               </h1>
 
               <div className="flex items-center space-x-6 mb-6 text-charcoal-600">

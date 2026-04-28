@@ -39,7 +39,7 @@ const Header = () => {
       height: 0,
       transition: {
         duration: 0.3,
-        ease: "easeInOut"
+        ease: "easeInOut" as const
       }
     },
     open: {
@@ -47,7 +47,7 @@ const Header = () => {
       height: "auto",
       transition: {
         duration: 0.3,
-        ease: "easeInOut"
+        ease: "easeInOut" as const
       }
     }
   };
@@ -296,22 +296,6 @@ const Header = () => {
                   </motion.div>
                 );
               })}
-              
-              <motion.div
-                custom={4}
-                variants={menuItemVariants}
-                initial="closed"
-                animate="open"
-                exit="closed"
-              >
-                <Link 
-                  href="/contact"
-                  className="block text-white hover:text-yellow-400 transition-colors py-3 font-medium tracking-wide"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  CONTACT US
-                </Link>
-              </motion.div>
               
               {!isAuthenticated && (
                 <motion.div
