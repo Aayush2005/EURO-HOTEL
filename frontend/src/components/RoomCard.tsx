@@ -4,7 +4,7 @@ import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import LazyImage from '@/components/LazyImage';
-import { getRoomCardImage } from '@/lib/room-images';
+import { resolveRoomCardImage } from '@/lib/room-images';
 
 interface Room {
   room_type: string;
@@ -14,6 +14,7 @@ interface Room {
   available_rooms: number;
   amenities: string[];
   description: string;
+  image_urls?: unknown;
 }
 
 interface RoomCardProps {
@@ -34,7 +35,7 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, index, getRoomTypeLabel 
       <Link href={`/rooms/${room.room_type}`}>
       <div className="relative h-64 overflow-hidden">
         <LazyImage
-          publicId={getRoomCardImage(room.room_type)}
+          publicId={resolveRoomCardImage(room.room_type, room.image_urls)}
           alt={getRoomTypeLabel(room.room_type)}
           width={400}
           height={256}

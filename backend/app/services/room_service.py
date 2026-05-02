@@ -19,6 +19,7 @@ def _serialize_room(row: dict) -> dict[str, Any]:
         "available_rooms": int(row["available_rooms"] or 0),
         "amenities": row["amenities"] or [],
         "description": row["description"],
+        "image_urls": row["image_urls"] if row["image_urls"] is not None else [],
     }
 
 

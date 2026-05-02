@@ -10,6 +10,7 @@ import LazyImage from '@/components/LazyImage';
 import OrbitalLoader from '@/components/OrbitalLoader';
 import RoomCardSkeleton from '@/components/skeletons/RoomCardSkeleton';
 import RoomCard from '@/components/RoomCard';
+import { resolveRoomCardImage } from '@/lib/room-images';
 // import { useProgressiveLoading } from '@/hooks/useInfiniteScroll'; // Temporarily disabled for debugging
 
 
@@ -21,6 +22,7 @@ interface Room {
   available_rooms: number;
   amenities: string[];
   description: string;
+  image_urls?: unknown;
 }
 
 
@@ -174,7 +176,10 @@ export default function RoomsPage() {
             transition={{ duration: 1.5 }}
           >
             <LazyImage
-              publicId="https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-7.jpg?updatedAt=1777049081226"
+              publicId={resolveRoomCardImage(
+                filteredRooms[0]?.room_type ?? '',
+                filteredRooms[0]?.image_urls
+              )}
               alt="Luxury Hotel Rooms"
               width={1200}
               height={600}

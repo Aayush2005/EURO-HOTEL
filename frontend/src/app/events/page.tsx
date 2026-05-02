@@ -22,28 +22,25 @@ const EventsPage = () => {
 
   const eventSpaces = [
     {
-      name: "Grand Ballroom",
-      capacity: "500 guests",
-      area: "800 sqm",
-      features: ["Crystal chandeliers", "State-of-the-art AV", "Royal décor", "Dedicated entrance"],
-      image: "/EVENT.jpg",
-      description: "Our magnificent ballroom epitomizes grandeur with soaring ceilings, ornate details, and world-class facilities."
+      name: "The First Floor — 1st NH65 Restaurant",
+      area: "Exclusive Dining",
+      features: ["Private dining area", "Continental & Indian menus", "Elegant ambiance", "Personalized service"],
+      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-16.jpg?updatedAt=1777049081422",
+      description: "An elegantly designed private floor on NH65, perfect for celebrations, corporate gatherings, family functions, kitty parties and engagement ceremonies. Enjoy customized continental and Indian menus crafted by our culinary team, in an exclusive space away from the main restaurant crowd."
     },
     {
       name: "Executive Boardroom",
-      capacity: "20 guests",
       area: "60 sqm",
       features: ["Video conferencing", "High-speed WiFi", "Premium furniture", "Climate control"],
-      image: "/CONFERENCE.jpg",
+      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-13.jpg?updatedAt=1777049081345",
       description: "Intimate setting for high-level meetings with cutting-edge technology and refined ambiance."
     },
     {
-      name: "Heritage Courtyard",
-      capacity: "200 guests",
-      area: "400 sqm",
-      features: ["Open-air setting", "Garden views", "Flexible layout", "Weather protection"],
-      image: "/beneath_booking_form.jpg",
-      description: "Enchanting outdoor venue perfect for cocktail receptions and cultural celebrations."
+      name: "The Open Rooftop — Euro Hotel",
+      area: "Rooftop Venue",
+      features: ["Open-air setting", "Elegant lighting", "Customized event setups", "Live music ready"],
+      image: "/EVENT.jpg",
+      description: "A stunning open-air rooftop ideal for birthday parties, cocktail dinners, pre-wedding functions, live music nights and corporate gatherings. Featuring elegant lighting, customizable event setups and premium hospitality, every occasion under the open sky becomes truly unforgettable."
     }
   ];
 
@@ -149,7 +146,6 @@ const EventsPage = () => {
                       />
                       <div className="absolute inset-0 bg-navy-900 bg-opacity-20"></div>
                       <div className="absolute top-4 right-4 bg-gold-600 text-navy-900 px-3 py-1 rounded-full text-sm font-medium">
-                        {space.capacity}
                       </div>
                     </div>
                   </div>

@@ -6,6 +6,7 @@ CREATE TABLE hotel.room_types (
     tax_percent NUMERIC(5,2) NOT NULL,
     max_occupancy INT NOT NULL,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    amenities JSONB DEFAULT '[]',
 
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()

@@ -27,3 +27,32 @@ export function getRoomImages(roomType: string): string[] {
 export function getRoomCardImage(roomType: string): string {
   return getRoomImages(roomType)[0];
 }
+
+/** Collect HTTP(S) URLs from API jsonb (`string[]`, nested arrays, or string values on an object). */
+function collectUrlStrings(value: unknown): string[] {
+  if (typeof value === 'string') {
+    const trimmed = value.trim();
+    return trimmed.startsWith('http://') || trimmed.startsWith('https://') ? [trimmed] : [];
+  }
+  if (Array.isArray(value)) return value.flatMap(collectUrlStrings);
+  if (value && typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).flatMap(collectUrlStrings);
+  }
+  return [];
+}
+
+export function normalizeApiImageUrls(raw: unknown): string[] {
+  if (raw == null) return [];
+  return collectUrlStrings(raw);
+}
+
+/** Prefer URLs from the API; fall back to static config when the API sends nothing usable. */
+export function resolveRoomImageUrls(roomType: string, imageUrlsFromApi?: unknown): string[] {
+  const fromApi = normalizeApiImageUrls(imageUrlsFromApi);
+  if (fromApi.length > 0) return fromApi;
+  return getRoomImages(roomType);
+}
+
+export function resolveRoomCardImage(roomType: string, imageUrlsFromApi?: unknown): string {
+  return resolveRoomImageUrls(roomType, imageUrlsFromApi)[0];
+}

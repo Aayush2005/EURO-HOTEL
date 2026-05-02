@@ -16,7 +16,7 @@ import LazyImage from '@/components/LazyImage';
 import OrbitalLoader from '@/components/OrbitalLoader';
 import ComingSoon from '@/components/ComingSoon';
 import { PAGE_CONFIG } from '@/lib/page-config';
-import { getRoomImages as getRoomImageUrls } from '@/lib/room-images';
+import { resolveRoomImageUrls } from '@/lib/room-images';
 
 
 interface RoomImage {
@@ -35,6 +35,7 @@ interface Room {
   available_rooms: number;
   amenities: string[];
   description: string;
+  image_urls?: unknown;
   images: RoomImage[];
 }
 
@@ -42,8 +43,8 @@ interface Room {
 
 
 
-const buildRoomImages = (roomType: string): RoomImage[] =>
-  getRoomImageUrls(roomType).map((url, index) => ({
+const buildRoomImages = (roomType: string, imageUrlsFromApi?: unknown): RoomImage[] =>
+  resolveRoomImageUrls(roomType, imageUrlsFromApi).map((url, index) => ({
     publicId: url,
     alt: `${roomType} room view ${index + 1}`,
     is_primary: index === 0,
@@ -85,7 +86,10 @@ export default function RoomDetailsPage() {
 
         if (response.ok) {
           const roomData = await response.json();
-          roomData.images = buildRoomImages(roomData.room_type);
+          console.log('[RoomDetail] raw API response:', roomData);
+          console.log('[RoomDetail] image_urls from API:', roomData.image_urls);
+          roomData.images = buildRoomImages(roomData.room_type, roomData.image_urls);
+          console.log('[RoomDetail] built images array:', roomData.images);
           setRoom(roomData);
         } else {
           setRoom(null);
@@ -284,7 +288,9 @@ export default function RoomDetailsPage() {
             <div className="relative h-96 md:h-[500px]">
               <LazyImage
                 key={selectedImageIndex}
-                publicId={room.images[selectedImageIndex]?.publicId || getRoomImageUrls(room.room_type)[0]}
+                publicId={
+                  room.images[selectedImageIndex]?.publicId || room.images[0]?.publicId || ''
+                }
                 alt={room.images[selectedImageIndex]?.alt || room.room_type}
                 width={1200}
                 height={500}
@@ -458,7 +464,9 @@ export default function RoomDetailsPage() {
             
             <div className="relative">
               <LazyImage
-                publicId={room.images[selectedImageIndex]?.publicId || getRoomImageUrls(room.room_type)[0]}
+                publicId={
+                  room.images[selectedImageIndex]?.publicId || room.images[0]?.publicId || ''
+                }
                 alt={room.images[selectedImageIndex]?.alt || room.room_type}
                 width={1200}
                 height={800}

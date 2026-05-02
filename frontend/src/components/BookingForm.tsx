@@ -1,13 +1,15 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import { useSearchParams } from 'next/navigation';
+import { resolveRoomCardImage } from '@/lib/room-images';
 
 interface RoomOption {
   room_type: string;
   room_base_price: number;
+  image_urls?: unknown;
 }
 
 const BookingFormContent = () => {
@@ -84,12 +86,17 @@ const BookingFormContent = () => {
     });
   };
 
+  const bookingHeroSrc = useMemo(() => {
+    const selected = rooms.find(r => r.room_type === formData.roomType);
+    return resolveRoomCardImage(selected?.room_type ?? '', selected?.image_urls);
+  }, [rooms, formData.roomType]);
+
   return (
     <section id="booking-form" className="py-20 relative">
       {/* Background Image */}
       <div className="absolute inset-0">
         <Image
-          src="https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-5.jpg?updatedAt=1777049081263"
+          src={bookingHeroSrc}
           alt="Luxury Hotel Room"
           fill
           className="object-cover"
