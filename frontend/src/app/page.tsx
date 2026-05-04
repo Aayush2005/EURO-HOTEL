@@ -2,7 +2,7 @@ import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import PhilosophySection from '@/components/PhilosophySection';
 import RestaurantFeatures from '@/components/RestaurantFeatures';
-import HistoryCarousel from '@/components/HistoryCarousel';
+import DiningCarousel from '@/components/DiningCarousel';
 import GallerySection from '@/components/GallerySection';
 import EventsSection from '@/components/EventsSection';
 import BookingForm from '@/components/BookingForm';
@@ -17,7 +17,7 @@ export default function Home() {
         <Header />
         <HeroSection />
         <PhilosophySection />
-        <HistoryCarousel />
+        <DiningCarousel />
         <GallerySection />
         <RestaurantFeatures />
         <EventsSection />

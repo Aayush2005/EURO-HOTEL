@@ -51,6 +51,12 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
+  const maxDate = React.useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 3);
+    return d.toISOString().split('T')[0];
+  }, []);
+
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
@@ -404,12 +410,13 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
                           value={checkInDate}
                           onChange={(e) => setCheckInDate(e.target.value)}
                           min={new Date().toISOString().split('T')[0]}
+                          max={maxDate}
                           className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
                           required
                         />
                       </div>
                     </div>
-                    
+
                     <div>
                       <label className="block text-sm font-medium text-charcoal-700 mb-2">
                         Check-out Date
@@ -421,6 +428,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
                           value={checkOutDate}
                           onChange={(e) => setCheckOutDate(e.target.value)}
                           min={checkInDate || new Date().toISOString().split('T')[0]}
+                          max={maxDate}
                           className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
                           required
                         />

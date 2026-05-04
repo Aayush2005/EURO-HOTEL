@@ -91,6 +91,12 @@ const BookingFormContent = () => {
     return resolveRoomCardImage(selected?.room_type ?? '', selected?.image_urls);
   }, [rooms, formData.roomType]);
 
+  const maxDate = useMemo(() => {
+    const d = new Date();
+    d.setMonth(d.getMonth() + 3);
+    return d.toISOString().split('T')[0];
+  }, []);
+
   return (
     <section id="booking-form" className="py-20 relative">
       {/* Background Image */}
@@ -147,6 +153,7 @@ const BookingFormContent = () => {
                     value={formData.checkIn}
                     onChange={handleChange}
                     min={new Date().toISOString().split('T')[0]}
+                    max={maxDate}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gold-500 transition-colors"
                     required
                   />
@@ -163,6 +170,7 @@ const BookingFormContent = () => {
                     value={formData.checkOut}
                     onChange={handleChange}
                     min={formData.checkIn || new Date().toISOString().split('T')[0]}
+                    max={maxDate}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:border-gold-500 transition-colors"
                     required
                   />

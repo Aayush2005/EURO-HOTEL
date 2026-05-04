@@ -447,6 +447,76 @@ export default function RoomDetailsPage() {
             </motion.div>
           </div>
         </div>
+
+        {/* Nearby Places */}
+        <div className="container mx-auto px-6 pb-16">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+          >
+            <h2 className="text-3xl font-serif font-semibold text-navy-900 mb-8">
+              Nearby Places
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+              {/* Hospitals */}
+              <div className="premium-card p-6">
+                <div className="flex items-center space-x-3 mb-5">
+                  <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+                    <MapPin className="text-red-500" size={20} />
+                  </div>
+                  <h3 className="text-xl font-serif font-semibold text-navy-900">Hospitals</h3>
+                </div>
+                <ul className="space-y-3">
+                  {[
+                    'Dhruva Hospitals — Patancheru Industrial Area, Hyderabad',
+                    'Tirumala Hospital — Multispeciality',
+                    'Malla Reddy Narayana Multispeciality Hospital',
+                    'Pranaam Hospitals',
+                    'Panacea Meridian Hospitals — Beeramguda, Telangana',
+                    'Jeedimetla, Hyderabad',
+                    'Miyapur, Hyderabad',
+                    'RC Puram, Hyderabad',
+                  ].map((place) => (
+                    <li key={place} className="flex items-start space-x-3 text-charcoal-700">
+                      <CheckCircle className="text-gold-600 mt-0.5 shrink-0" size={16} />
+                      <span className="text-sm">{place}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              {/* Universities */}
+              <div className="premium-card p-6">
+                <div className="flex items-center space-x-3 mb-5">
+                  <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center">
+                    <MapPin className="text-blue-500" size={20} />
+                  </div>
+                  <h3 className="text-xl font-serif font-semibold text-navy-900">Nearby Universities</h3>
+                </div>
+                <ul className="space-y-3">
+                  {[
+                    'GITAM Deemed to be University — Rudraram, Telangana',
+                    'GITAM School of Humanities and Social Sciences',
+                    'Sri Chaitanya Junior College, Rudraram',
+                    'Sri Chaitanya Educational Institutions',
+                    'RRS College of Engineering & Technology',
+                    'MNR University',
+                    'GITAM University Campus — Rudraram, Muthangi, Hyderabad',
+                    'IIT Hyderabad — Mohd. Shapur, Telangana',
+                  ].map((place) => (
+                    <li key={place} className="flex items-start space-x-3 text-charcoal-700">
+                      <CheckCircle className="text-gold-600 mt-0.5 shrink-0" size={16} />
+                      <span className="text-sm">{place}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+            </div>
+          </motion.div>
+        </div>
       </main>
 
       <Footer />

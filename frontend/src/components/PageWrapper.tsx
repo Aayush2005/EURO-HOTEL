@@ -23,9 +23,6 @@ const PageWrapper: React.FC<PageWrapperProps> = ({ children }) => {
     const preloadImages = [
       '/logoVector.png',
       '/logoText.png',
-      '/carousel_Chaoumahala_palace_hyderabad.jpg',
-      '/carousel_charminar.jpg',
-      '/carousel_golconda.jpg'
     ];
 
     const imagePromises = preloadImages.map((src) => {
