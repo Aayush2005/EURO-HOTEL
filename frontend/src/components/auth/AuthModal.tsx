@@ -206,33 +206,6 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
               </button>
             </div>
 
-            {/* Tab toggle */}
-            {step !== 'verify' && (
-              <div className="flex border-b border-muted-beige">
-                <button
-                  type="button"
-                  onClick={() => setStep('login')}
-                  className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                    step === 'login'
-                      ? 'text-navy-900 border-b-2 border-gold-500'
-                      : 'text-charcoal-500 hover:text-charcoal-700'
-                  }`}
-                >
-                  Sign In
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStep('register')}
-                  className={`flex-1 py-3 text-sm font-medium transition-colors ${
-                    step === 'register'
-                      ? 'text-navy-900 border-b-2 border-gold-500'
-                      : 'text-charcoal-500 hover:text-charcoal-700'
-                  }`}
-                >
-                  Sign Up
-                </button>
-              </div>
-            )}
 
             {/* ── Login ── */}
             {step === 'login' && (
