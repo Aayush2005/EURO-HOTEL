@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, type Variants } from 'framer-motion';
 import Image from 'next/image';
 import { User, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,11 +16,11 @@ const SolidHeader = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
 
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const { isAuthModalOpen, authMode, openAuthModal, closeAuthModal } = useAuthModal();
   const userMenuRef = useClickOutside(() => setShowUserMenu(false));
 
-  const menuVariants = {
+  const menuVariants: Variants = {
     closed: {
       opacity: 0,
       height: 0,
@@ -97,14 +97,16 @@ const SolidHeader = () => {
 
         {/* Action Section - Desktop */}
         <div className="hidden md:flex items-center space-x-4">
-          {isAuthenticated ? (
+          {isLoading ? (
+            <div className="w-16 h-5 bg-white/20 rounded animate-pulse" />
+          ) : isAuthenticated ? (
             <div className="relative" ref={userMenuRef}>
               <motion.button
                 onClick={() => setShowUserMenu(!showUserMenu)}
                 className="flex items-center space-x-2 text-white hover:text-yellow-400 transition-colors font-medium"
               >
                 <User size={18} />
-                <span>{user?.name?.split(' ')[0] || user?.name}</span>
+                <span>{user?.full_name?.split(' ')[0] || user?.email}</span>
               </motion.button>
 
               <AnimatePresence>
@@ -264,7 +266,7 @@ const SolidHeader = () => {
                       }}
                       className="block text-white hover:text-yellow-400 transition-colors py-3 font-medium tracking-wide"
                     >
-                      PROFILE ({user?.name?.split(' ')[0] || user?.name})
+                      PROFILE ({user?.full_name?.split(' ')[0] || user?.email})
                     </button>
                   </motion.div>
 

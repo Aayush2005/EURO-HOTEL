@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Eye, EyeOff, Mail, User, Phone, Lock } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ArrowLeft, Eye, EyeOff, Lock, Mail, Phone, User, X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+
+import { useAuth } from '@/contexts/AuthContext';
 import CountryCodeDropdown from '@/components/ui/CountryCodeDropdown';
 
 interface AuthModalProps {
@@ -14,179 +15,141 @@ interface AuthModalProps {
   initialMode?: 'login' | 'register';
 }
 
-type AuthMode = 'login' | 'register' | 'otp' | 'forgot' | 'reset';
+type Step = 'login' | 'register' | 'verify';
+
+const OTP_LENGTH = 6;
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
-  const [mode, setMode] = useState<AuthMode>(initialMode);
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const { signIn, signUp, verifySignupOtp, updateProfile } = useAuth();
+
+  const [step, setStep] = useState<Step>(initialMode);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [dialCode, setDialCode] = useState('+91');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
+  const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
-  
-  const { login, register, verifyOTP, resetPasswordRequest, resetPassword } = useAuth();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Prevent body scroll when modal is open
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
+      setStep(initialMode);
+      setEmail('');
+      setPassword('');
+      setFullName('');
+      setDialCode('+91');
+      setPhoneNumber('');
+      setOtp(Array(OTP_LENGTH).fill(''));
+      setShowPassword(false);
     }
+  }, [isOpen, initialMode]);
 
-    // Cleanup on unmount
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+  useEffect(() => {
+    document.body.style.overflow = isOpen ? 'hidden' : 'unset';
+    return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
 
-  const [formData, setFormData] = useState({
-    email: '',
-    name: '',
-    password: '',
-    phone: '',
-    otp_code: '',
-    new_password: '',
-    confirm_password: '',
-  });
-
-  const [countryCode, setCountryCode] = useState('+91');
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    
-    // For phone number, only allow digits
-    if (name === 'phone') {
-      const digitsOnly = value.replace(/\D/g, '');
-      setFormData({ ...formData, [name]: digitsOnly });
-    } else {
-      setFormData({ ...formData, [name]: value });
+  useEffect(() => {
+    if (step === 'verify') {
+      setTimeout(() => otpRefs.current[0]?.focus(), 100);
     }
-  };
+  }, [step]);
 
-  const validatePassword = (password: string) => {
-    const minLength = password.length >= 8;
-    const hasUpper = /[A-Z]/.test(password);
-    const hasLower = /[a-z]/.test(password);
-    const hasNumber = /\d/.test(password);
-    const hasSpecial = /[!@#$%^&*()_+\-=\[\]{}|;:,.<>?]/.test(password);
-    
-    return minLength && hasUpper && hasLower && hasNumber && hasSpecial;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-
     try {
-      switch (mode) {
-        case 'login':
-          await login({ email: formData.email, password: formData.password });
-          toast.success('Welcome back!');
-          onClose();
-          break;
-
-        case 'register':
-          if (!validatePassword(formData.password)) {
-            toast.error('Password must be at least 8 characters with uppercase, lowercase, number, and special character');
-            return;
-          }
-          if (formData.password !== formData.confirm_password) {
-            toast.error('Passwords do not match. Please re-enter.');
-            return;
-          }
-          if (!formData.phone || formData.phone.length < 7) {
-            toast.error('Please enter a valid phone number');
-            return;
-          }
-          await register({
-            email: formData.email,
-            name: formData.name,
-            password: formData.password,
-            phone: phoneNumber,
-            country_code: countryCode,
-          });
-          setEmail(formData.email);
-          setMode('otp');
-          toast.success('Registration successful! Please check your email for verification code.');
-          break;
-
-        case 'otp':
-          await verifyOTP({ email: email || formData.email, otp_code: formData.otp_code });
-          toast.success('Account verified successfully!');
-          onClose();
-          break;
-
-        case 'forgot':
-          await resetPasswordRequest(formData.email);
-          setEmail(formData.email);
-          setMode('reset');
-          toast.success('Reset code sent to your email!');
-          break;
-
-        case 'reset':
-          if (!validatePassword(formData.new_password)) {
-            toast.error('Password must be at least 8 characters with uppercase, lowercase, number, and special character');
-            return;
-          }
-          if (formData.new_password !== formData.confirm_password) {
-            toast.error('Passwords do not match. Please re-enter.');
-            return;
-          }
-          await resetPassword({
-            email: email || formData.email,
-            otp_code: formData.otp_code,
-            new_password: formData.new_password,
-          });
-          toast.success('Password reset successfully!');
-          setMode('login');
-          break;
-      }
+      await signIn(email, password);
+      toast.success('Welcome back!');
+      onClose();
     } catch (error: any) {
-      toast.error(error.message || 'An error occurred');
+      toast.error(error.message || 'Invalid email or password.');
     } finally {
       setIsLoading(false);
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      email: '',
-      name: '',
-      password: '',
-      phone: '',
-      otp_code: '',
-      new_password: '',
-      confirm_password: '',
-    });
-    setEmail('');
-    setShowPassword(false);
-    setCountryCode('+91');
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!phoneNumber.trim()) {
+      toast.error('Phone number is required.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await signUp(email, password);
+      setStep('verify');
+      toast.success(`Verification code sent to ${email}`);
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to create account.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleClose = () => {
-    resetForm();
-    setMode(initialMode);
-    onClose();
+  const handleOtpChange = (index: number, value: string) => {
+    const digit = value.replace(/\D/g, '').slice(-1);
+    const next = [...otp];
+    next[index] = digit;
+    setOtp(next);
+    if (digit && index < OTP_LENGTH - 1) otpRefs.current[index + 1]?.focus();
   };
 
-  const modalVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: { opacity: 1, scale: 1 },
-    exit: { opacity: 0, scale: 0.8 }
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) otpRefs.current[index - 1]?.focus();
   };
 
-  const getTitle = () => {
-    switch (mode) {
-      case 'login': return 'Welcome Back';
-      case 'register': return 'Create Account';
-      case 'otp': return 'Verify Your Account';
-      case 'forgot': return 'Forgot Password';
-      case 'reset': return 'Reset Password';
-      default: return 'Authentication';
+  const handleOtpPaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const digits = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, OTP_LENGTH);
+    const next = [...otp];
+    digits.split('').forEach((d, i) => { next[i] = d; });
+    setOtp(next);
+    otpRefs.current[Math.min(digits.length, OTP_LENGTH - 1)]?.focus();
+  };
+
+  const handleVerifySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = otp.join('');
+    if (token.length < OTP_LENGTH) {
+      toast.error('Please enter the full 6-digit code.');
+      return;
+    }
+    setIsLoading(true);
+    try {
+      await verifySignupOtp(email, token);
+      await updateProfile({
+        full_name: fullName.trim() || null,
+        phone: `${dialCode}${phoneNumber.trim()}`,
+      }).catch(() => {});
+      toast.success('Account verified! You are now signed in.');
+      onClose();
+    } catch (error: any) {
+      toast.error(error.message || 'Invalid or expired code. Please try again.');
+      setOtp(Array(OTP_LENGTH).fill(''));
+      otpRefs.current[0]?.focus();
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setIsLoading(true);
+    try {
+      await signUp(email, password);
+      toast.success('New code sent to your email.');
+      setOtp(Array(OTP_LENGTH).fill(''));
+      otpRefs.current[0]?.focus();
+    } catch (error: any) {
+      toast.error(error.message || 'Could not resend code.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -201,402 +164,303 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* Backdrop */}
           <motion.div
             className="auth-modal-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={handleClose}
+            onClick={onClose}
           />
 
-          {/* Modal */}
           <motion.div
             className="auth-modal-content w-full max-w-md bg-off-white rounded-lg shadow-2xl my-8 mx-auto"
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.92 }}
+            transition={{ duration: 0.2 }}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-muted-beige">
-              <h2 className="text-2xl font-serif font-semibold text-navy-900">{getTitle()}</h2>
+              <div className="flex items-center gap-3">
+                {step === 'verify' && (
+                  <button
+                    type="button"
+                    onClick={() => { setStep('register'); setOtp(Array(OTP_LENGTH).fill('')); }}
+                    className="p-1 text-charcoal-600 hover:text-navy-900 transition-colors"
+                    aria-label="Go back"
+                  >
+                    <ArrowLeft size={18} />
+                  </button>
+                )}
+                <h2 className="text-2xl font-serif font-semibold text-navy-900">
+                  {step === 'login' ? 'Sign In' : step === 'register' ? 'Create Account' : 'Verify Email'}
+                </h2>
+              </div>
               <button
-                onClick={handleClose}
+                onClick={onClose}
                 className="p-2 text-charcoal-600 hover:text-navy-900 transition-colors"
+                type="button"
+                aria-label="Close"
               >
                 <X size={20} />
               </button>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              {mode === 'login' && (
-                <>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">
-                      Email
-                    </label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        placeholder="Enter your email"
-                        required
-                      />
-                    </div>
-                  </div>
+            {/* Tab toggle */}
+            {step !== 'verify' && (
+              <div className="flex border-b border-muted-beige">
+                <button
+                  type="button"
+                  onClick={() => setStep('login')}
+                  className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                    step === 'login'
+                      ? 'text-navy-900 border-b-2 border-gold-500'
+                      : 'text-charcoal-500 hover:text-charcoal-700'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStep('register')}
+                  className={`flex-1 py-3 text-sm font-medium transition-colors ${
+                    step === 'register'
+                      ? 'text-navy-900 border-b-2 border-gold-500'
+                      : 'text-charcoal-500 hover:text-charcoal-700'
+                  }`}
+                >
+                  Sign Up
+                </button>
+              </div>
+            )}
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-12 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        placeholder="Enter password"
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-charcoal-600"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setMode('forgot')}
-                    className="text-sm text-gold-600 hover:text-gold-500 transition-colors"
-                  >
-                    Forgot your password?
-                  </button>
-                </>
-              )}
-
-              {mode === 'register' && (
-                <>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">Email</label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
-                      <input
-                        type="email"
-                        name="email"
-                        value={formData.email}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        placeholder="Enter email"
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">Full Name</label>
-                    <div className="relative">
-                      <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
-                      <input
-                        type="text"
-                        name="name"
-                        value={formData.name}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        placeholder="Enter your full name"
-                        minLength={2}
-                        maxLength={100}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">Phone Number</label>
-                    <div className="flex gap-2">
-                      <CountryCodeDropdown
-                        value={countryCode}
-                        onChange={setCountryCode}
-                        className="flex-shrink-0"
-                      />
-                      <div className="relative flex-1">
-                        <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
-                        <input
-                          type="tel"
-                          name="phone"
-                          value={formData.phone}
-                          onChange={handleInputChange}
-                          onKeyDown={(e) => {
-                            // Allow backspace, delete, tab, escape, enter, and arrow keys
-                            if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode) ||
-                                // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-                                (e.keyCode === 65 && e.ctrlKey) ||
-                                (e.keyCode === 67 && e.ctrlKey) ||
-                                (e.keyCode === 86 && e.ctrlKey) ||
-                                (e.keyCode === 88 && e.ctrlKey)) {
-                              return;
-                            }
-                            // Ensure that it is a number and stop the keypress
-                            if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
-                              e.preventDefault();
-                            }
-                          }}
-                          className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                          placeholder="1234567890"
-                          minLength={7}
-                          maxLength={15}
-                          required
-                        />
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <p className="text-xs text-charcoal-600">
-                        Enter digits only (no spaces or special characters)
-                      </p>
-                      {formData.phone && (
-                        <p className="text-xs text-gold-600 font-medium">
-                          Full number: {countryCode}{formData.phone}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        name="password"
-                        value={formData.password}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-12 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        placeholder="Create password"
-                        minLength={8}
-                        maxLength={128}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-charcoal-600"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                    <p className="text-xs text-charcoal-600">
-                      Must be 8+ characters with uppercase, lowercase, number, and special character
-                    </p>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">Confirm Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        name="confirm_password"
-                        value={formData.confirm_password}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-12 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        placeholder="Confirm password"
-                        minLength={8}
-                        maxLength={128}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-charcoal-600"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {mode === 'otp' && (
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium text-charcoal-700">Verification Code</label>
-                  <input
-                    type="text"
-                    name="otp_code"
-                    value={formData.otp_code}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent text-center text-2xl tracking-widest"
-                    placeholder="000000"
-                    maxLength={6}
-                    required
-                  />
-                  <p className="text-sm text-charcoal-600 text-center">
-                    Enter the 6-digit code sent to your email
-                  </p>
-                </div>
-              )}
-
-              {mode === 'forgot' && (
+            {/* ── Login ── */}
+            {step === 'login' && (
+              <form onSubmit={handleLoginSubmit} className="p-6 space-y-5">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-charcoal-700">Email</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
                     <input
                       type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                      placeholder="Enter your email"
+                      placeholder="you@example.com"
                       required
+                      autoComplete="email"
                     />
                   </div>
                 </div>
-              )}
 
-              {mode === 'reset' && (
-                <>
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">Reset Code</label>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-charcoal-700">Password</label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-10 pr-10 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                      placeholder="••••••••"
+                      required
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal-500 hover:text-charcoal-700"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Signing in...' : 'Sign In'}
+                </button>
+
+                <p className="text-center text-sm text-charcoal-500">
+                  Don&apos;t have an account?{' '}
+                  <button type="button" onClick={() => setStep('register')}
+                    className="text-gold-600 hover:text-gold-700 font-medium hover:underline underline-offset-2">
+                    Sign up
+                  </button>
+                </p>
+              </form>
+            )}
+
+            {/* ── Register ── */}
+            {step === 'register' && (
+              <form onSubmit={handleRegisterSubmit} className="p-6 space-y-4">
+                {/* Full Name */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-charcoal-700">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
                     <input
                       type="text"
-                      name="otp_code"
-                      value={formData.otp_code}
-                      onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent text-center text-2xl tracking-widest"
-                      placeholder="000000"
-                      maxLength={6}
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                      placeholder="John Doe"
                       required
+                      maxLength={150}
+                      autoComplete="name"
                     />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">New Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        name="new_password"
-                        value={formData.new_password}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-12 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        placeholder="Enter new password"
-                        minLength={8}
-                        maxLength={128}
-                        required
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-charcoal-600"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
-                    </div>
-                    <p className="text-xs text-charcoal-600">
-                      Must be 8+ characters with uppercase, lowercase, number, and special character
-                    </p>
+                {/* Email */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-charcoal-700">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                      placeholder="you@example.com"
+                      required
+                      autoComplete="email"
+                    />
                   </div>
+                </div>
 
-                  <div className="space-y-2">
-                    <label className="block text-sm font-medium text-charcoal-700">Confirm New Password</label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
+                {/* Phone */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-charcoal-700">
+                    Phone Number <span className="text-red-500">*</span>
+                  </label>
+                  <div className="flex gap-2">
+                    <CountryCodeDropdown
+                      value={dialCode}
+                      onChange={setDialCode}
+                    />
+                    <div className="relative flex-1">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
                       <input
-                        type={showPassword ? 'text' : 'password'}
-                        name="confirm_password"
-                        value={formData.confirm_password}
-                        onChange={handleInputChange}
-                        className="w-full pl-10 pr-12 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        placeholder="Confirm new password"
-                        minLength={8}
-                        maxLength={128}
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                        className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                        placeholder="9876543210"
                         required
+                        maxLength={12}
+                        autoComplete="tel-national"
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-charcoal-600"
-                      >
-                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                      </button>
                     </div>
                   </div>
-                </>
-              )}
+                </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Please wait...' : 
-                  mode === 'login' ? 'Sign In' :
-                  mode === 'register' ? 'Create Account' :
-                  mode === 'otp' ? 'Verify Account' :
-                  mode === 'forgot' ? 'Send Reset Code' :
-                  'Reset Password'
-                }
-              </button>
-
-              {/* Mode Switchers */}
-              <div className="text-center space-y-2">
-                {mode === 'login' && (
-                  <p className="text-sm text-charcoal-600">
-                    Don't have an account?{' '}
+                {/* Password */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-charcoal-700">
+                    Password <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
+                    <input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full pl-10 pr-10 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                      placeholder="Min. 6 characters"
+                      required
+                      minLength={6}
+                      autoComplete="new-password"
+                    />
                     <button
                       type="button"
-                      onClick={() => setMode('register')}
-                      className="text-gold-600 hover:text-gold-500 font-medium"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal-500 hover:text-charcoal-700"
                     >
-                      Sign up
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                     </button>
-                  </p>
-                )}
+                  </div>
+                </div>
 
-                {mode === 'register' && (
-                  <p className="text-sm text-charcoal-600">
-                    Already have an account?{' '}
-                    <button
-                      type="button"
-                      onClick={() => setMode('login')}
-                      className="text-gold-600 hover:text-gold-500 font-medium"
-                    >
-                      Sign in
-                    </button>
-                  </p>
-                )}
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Creating account...' : 'Create Account'}
+                </button>
 
-                {(mode === 'forgot' || mode === 'reset') && (
+                <p className="text-center text-sm text-charcoal-500">
+                  Already have an account?{' '}
+                  <button type="button" onClick={() => setStep('login')}
+                    className="text-gold-600 hover:text-gold-700 font-medium hover:underline underline-offset-2">
+                    Sign in
+                  </button>
+                </p>
+              </form>
+            )}
+
+            {/* ── OTP Verify ── */}
+            {step === 'verify' && (
+              <form onSubmit={handleVerifySubmit} className="p-6 space-y-6">
+                <p className="text-sm text-charcoal-600 text-center">
+                  We sent a 6-digit code to{' '}
+                  <span className="font-medium text-navy-900">{email}</span>.
+                  <br />Enter it below to verify your account.
+                </p>
+
+                <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
+                  {otp.map((digit, i) => (
+                    <input
+                      key={i}
+                      ref={(el) => { otpRefs.current[i] = el; }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(i, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(i, e)}
+                      className="w-11 h-13 text-center text-xl font-semibold border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent py-3"
+                      aria-label={`OTP digit ${i + 1}`}
+                    />
+                  ))}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading || otp.join('').length < OTP_LENGTH}
+                  className="w-full btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Verifying...' : 'Verify & Sign In'}
+                </button>
+
+                <p className="text-center text-sm text-charcoal-500">
+                  Didn&apos;t receive a code?{' '}
                   <button
                     type="button"
-                    onClick={() => setMode('login')}
-                    className="text-sm text-gold-600 hover:text-gold-500 font-medium"
+                    onClick={handleResendOtp}
+                    disabled={isLoading}
+                    className="text-gold-600 hover:text-gold-700 font-medium hover:underline underline-offset-2 disabled:opacity-50"
                   >
-                    Back to Sign In
+                    Resend
                   </button>
-                )}
-              </div>
-            </form>
+                </p>
+              </form>
+            )}
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
   );
 
-  return typeof window !== 'undefined' 
-    ? createPortal(modalContent, document.body)
-    : null;
+  return typeof window !== 'undefined' ? createPortal(modalContent, document.body) : null;
 };
 
 export default AuthModal;

@@ -46,7 +46,7 @@ interface GuestDetails {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, authenticatedFetch } = useAuth();
   const { openAuthModal } = useAuthModal();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -170,7 +170,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
         body: JSON.stringify({
           room_id: room.id,
           start_date: checkInDate,
@@ -204,9 +203,9 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
       // Pre-fill guest details with user info
       if (user) {
         setGuestDetails({
-          name: user.username || '',
+          name: user.full_name || '',
           email: user.email || '',
-          phone: user.phone || '',
+          phone: '',
           id_type: 'aadhar',
           id_number: ''
         });
@@ -231,12 +230,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
     try {
       const idempotencyKey = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       
-      const response = await fetch(`${API_URL}/api/bookings/hold`, {
+      const response = await authenticatedFetch('/api/bookings/hold', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify({
           room_id: room.id,
           start_date: checkInDate,
@@ -277,12 +272,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
 
     setLoading(true);
     try {
-      const response = await fetch(`${API_URL}/api/bookings/confirm`, {
+      const response = await authenticatedFetch('/api/bookings/confirm', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify({
           hold_token: holdToken,
           idempotency_key: holdToken // Using hold_token as idempotency_key
@@ -297,12 +288,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
       const bookingData = await response.json();
       
       // Create payment session
-      const paymentResponse = await fetch(`${API_URL}/api/payments/create-session`, {
+      const paymentResponse = await authenticatedFetch('/api/payments/create-session', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
         body: JSON.stringify({
           booking_id: bookingData.id
         })

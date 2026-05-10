@@ -1,21 +1,19 @@
 import logging
 from contextlib import asynccontextmanager
-import asyncio
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
-from fastapi import Depends
 
 # Configure logging early so import-time logs are visible
 logging.basicConfig(level=logging.INFO)
 
-from middleware.auth import ApiKeyAuth
+from app.auth.routes import router as auth_router
+from app.auth.service import load_jwks
 from app.routes.rooms import router as rooms_router
 from app.config import settings
-from app.transaction_pooler import connect_pool, close_pool
+from app.db import close_db_pool, init_db_pool
 
 logger = logging.getLogger(__name__)
 
@@ -23,18 +21,20 @@ logger = logging.getLogger(__name__)
 async def lifespan(app: FastAPI):
     # Startup
     logger.info("Starting up...")
-    await connect_pool()
+    await init_db_pool()
     logger.info("Connected to Supabase (PostgreSQL)")
+    await load_jwks()
+    logger.info("Loaded Supabase JWKS")
     
     yield
     # Shutdown
     logger.info("Shutting down...")
-    await close_pool()
+    await close_db_pool()
     logger.info("Disconnected from database")
 
 app = FastAPI(
-    title="Euro Hotel Authentication API",
-    description="Authentication and user management system for Euro Hotel",
+    title="Euro Hotel API",
+    description="Hotel booking API with Supabase Auth JWT verification",
     version="1.0.0",
     lifespan=lifespan
 )
@@ -55,14 +55,15 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Configure CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=settings.allowed_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 # Include routers
-app.include_router(rooms_router, dependencies=[Depends(ApiKeyAuth)])
+app.include_router(auth_router)
+app.include_router(rooms_router)
 
 @app.get("/")
 async def root():

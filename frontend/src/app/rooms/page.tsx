@@ -69,11 +69,7 @@ export default function RoomsPage() {
       try {
         setLoading(true);
         const apiUrl = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/rooms/`;
-        const response = await fetch(apiUrl, {
-          headers: {
-            'x-api-key': process.env.NEXT_PUBLIC_API_KEY || '',
-          },
-        });
+        const response = await fetch(apiUrl);
 
         if (response.ok) {
           const roomsData = await response.json();

@@ -9,7 +9,11 @@ export const PAGE_CONFIG = {
   ROOM_DETAILS_MESSAGE: "Room details are being enhanced with new features. Please visit our main Rooms page for now.",
 } as const;
 
-// Helper function to check if a page is disabled
-export const isPageDisabled = (page: keyof typeof PAGE_CONFIG) => {
-  return PAGE_CONFIG[page] === true;
+const DISABLED_FLAGS = {
+  EVENTS: PAGE_CONFIG.EVENTS_DISABLED,
+  ROOM_DETAILS: PAGE_CONFIG.ROOM_DETAILS_DISABLED,
+} as const;
+
+export const isPageDisabled = (page: keyof typeof DISABLED_FLAGS) => {
+  return DISABLED_FLAGS[page];
 };

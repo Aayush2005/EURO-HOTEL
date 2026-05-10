@@ -12,5 +12,5 @@ FROM hotel.room_types AS rt
 LEFT JOIN hotel.rooms AS r
     ON r.room_type_id = rt.id
 WHERE rt.is_active = TRUE
-  AND rt.name = %s
+  AND rt.name = $1
 GROUP BY rt.id, rt.name, rt.base_price, rt.tax_percent, rt.max_occupancy, rt.amenities, rt.description, rt.image_urls;

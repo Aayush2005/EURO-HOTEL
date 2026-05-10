@@ -18,7 +18,7 @@ const Header = () => {
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   
-  const { user, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const { isAuthModalOpen, authMode, openAuthModal, closeAuthModal } = useAuthModal();
   
   const userMenuRef = useClickOutside(() => setShowUserMenu(false));
@@ -145,7 +145,9 @@ const Header = () => {
             </motion.button>
           </Link>
           
-          {isAuthenticated ? (
+          {isLoading ? (
+            <div className="w-16 h-5 bg-white/20 rounded animate-pulse" />
+          ) : isAuthenticated ? (
             <div className="relative" ref={userMenuRef}>
               <motion.button
                 onClick={() => setShowUserMenu(!showUserMenu)}
@@ -155,7 +157,7 @@ const Header = () => {
                 transition={{ duration: 0.5, delay: 0.4 }}
               >
                 <User size={18} />
-                <span>{user?.name?.split(' ')[0] || user?.name}</span>
+                <span>{user?.full_name?.split(' ')[0] || user?.email}</span>
               </motion.button>
               
               <AnimatePresence>
@@ -333,7 +335,7 @@ const Header = () => {
                       }}
                       className="block text-white hover:text-yellow-400 transition-colors py-3 font-medium tracking-wide"
                     >
-                      PROFILE ({user?.name?.split(' ')[0] || user?.name})
+                      PROFILE ({user?.full_name?.split(' ')[0] || user?.email})
                     </button>
                   </motion.div>
                   

@@ -1,33 +1,35 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 
-interface User {
+import { supabase } from '@/lib/supabase';
+
+export interface User {
   id: string;
   email: string;
-  name: string;
-  phone: string;
-  country_code: string;
-  status: string;
+  full_name: string | null;
+  phone: string | null;
+  role: 'user' | 'admin' | 'manager' | 'receptionist';
+  is_active: boolean;
   created_at: string;
+  last_login_at: string | null;
 }
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (loginData: { email: string; password: string }) => Promise<void>;
-  register: (registerData: { email: string; name: string; password: string; phone: string; country_code: string }) => Promise<void>;
-  verifyOTP: (otpData: { email: string; otp_code: string }) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
+  verifySignupOtp: (email: string, token: string) => Promise<void>;
   logout: () => Promise<void>;
-  resetPasswordRequest: (email: string) => Promise<void>;
-  resetPassword: (resetData: { email: string; otp_code: string; new_password: string }) => Promise<void>;
-  updateProfile: (profileData: any) => Promise<void>;
-  refreshToken: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  updateProfile: (profileData: { full_name: string | null; phone?: string | null }) => Promise<void>;
+  getAccessToken: () => Promise<string | null>;
+  authenticatedFetch: (endpoint: string, options?: RequestInit) => Promise<Response>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -36,118 +38,130 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const isAuthenticated = !!user;
 
-  // API call helper
-  const apiCall = async (endpoint: string, options: RequestInit = {}) => {
-    const response = await fetch(`${API_URL}${endpoint}`, {
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-        ...options.headers,
-      },
-      ...options,
-    });
+  const getAccessToken = async () => {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  };
 
-    if (!response.ok) {
-      const error = await response.json().catch(() => ({ detail: 'An error occurred' }));
-      throw new Error(error.detail || 'An error occurred');
+  const authenticatedFetch = async (endpoint: string, options: RequestInit = {}) => {
+    const token = await getAccessToken();
+    const headers = new Headers(options.headers);
+    headers.set('Content-Type', headers.get('Content-Type') || 'application/json');
+    if (token) {
+      headers.set('Authorization', `Bearer ${token}`);
     }
+    return fetch(`${API_URL}${endpoint}`, { ...options, headers });
+  };
 
+  const parseApiResponse = async <T,>(response: Response): Promise<T> => {
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: 'Request failed' }));
+      throw new Error(error.detail || 'Request failed');
+    }
     return response.json();
   };
 
-  // Check authentication status on mount
+  const refreshUser = async () => {
+    const token = await getAccessToken();
+    if (!token) {
+      setUser(null);
+      return;
+    }
+    const data = await parseApiResponse<{ user: User }>(await authenticatedFetch('/me'));
+    setUser(data.user);
+  };
+
   useEffect(() => {
-    checkAuth();
+    let isMounted = true;
+
+    const bootstrap = async () => {
+      try {
+        await refreshUser();
+      } catch {
+        if (isMounted) setUser(null);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    };
+
+    bootstrap();
+
+    const { data } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!session) {
+        setUser(null);
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(`${API_URL}/me`, {
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        const result = await parseApiResponse<{ user: User }>(response);
+        if (isMounted) setUser(result.user);
+      } catch (err) {
+        console.error('[Auth] Failed to sync user from /me:', err);
+        if (isMounted) setUser(null);
+      } finally {
+        if (isMounted) setIsLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      data.subscription.unsubscribe();
+    };
   }, []);
 
-  const checkAuth = async () => {
-    try {
-      const data = await apiCall('/auth/me');
-      setUser(data);
-    } catch (error) {
-      // Try to refresh token
-      try {
-        await refreshToken();
-      } catch (refreshError) {
-        setUser(null);
-      }
-    } finally {
-      setIsLoading(false);
-    }
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw new Error(error.message);
   };
 
-  const login = async (loginData: { email: string; password: string }) => {
-    const data = await apiCall('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(loginData),
-    });
-    setUser(data.user);
+  const signUp = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) throw new Error(error.message);
   };
 
-  const register = async (registerData: { email: string; name: string; password: string; phone: string }) => {
-    await apiCall('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(registerData),
-    });
-  };
-
-  const verifyOTP = async (otpData: { email: string; otp_code: string }) => {
-    const data = await apiCall('/auth/verify-otp', {
-      method: 'POST',
-      body: JSON.stringify(otpData),
-    });
-    setUser(data.user);
+  const verifySignupOtp = async (email: string, token: string) => {
+    const { error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' });
+    if (error) throw new Error(error.message);
   };
 
   const logout = async () => {
-    try {
-      await apiCall('/auth/logout', { method: 'POST' });
-    } catch (error) {
-      // Even if logout fails on server, clear local state
-    }
+    await supabase.auth.signOut();
     setUser(null);
   };
 
-  const resetPasswordRequest = async (email: string) => {
-    await apiCall('/auth/reset-password-request', {
-      method: 'POST',
-      body: JSON.stringify({ email }),
-    });
-  };
-
-  const resetPassword = async (resetData: { email: string; otp_code: string; new_password: string }) => {
-    await apiCall('/auth/reset-password', {
-      method: 'POST',
-      body: JSON.stringify(resetData),
-    });
-  };
-
-  const updateProfile = async (profileData: any) => {
-    const data = await apiCall('/auth/update-profile', {
-      method: 'PUT',
-      body: JSON.stringify(profileData),
-    });
-    setUser(data);
-  };
-
-  const refreshToken = async () => {
-    const data = await apiCall('/auth/refresh', { method: 'POST' });
+  const updateProfile = async (profileData: { full_name: string | null }) => {
+    const data = await parseApiResponse<{ user: User }>(
+      await authenticatedFetch('/me', {
+        method: 'PATCH',
+        body: JSON.stringify(profileData),
+      }),
+    );
     setUser(data.user);
   };
 
-  const value = {
-    user,
-    isLoading,
-    isAuthenticated,
-    login,
-    register,
-    verifyOTP,
-    logout,
-    resetPasswordRequest,
-    resetPassword,
-    updateProfile,
-    refreshToken,
-  };
+  const value = useMemo(
+    () => ({
+      user,
+      isLoading,
+      isAuthenticated,
+      signIn,
+      signUp,
+      verifySignupOtp,
+      logout,
+      refreshUser,
+      updateProfile,
+      getAccessToken,
+      authenticatedFetch,
+    }),
+    [user, isLoading, isAuthenticated],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -3,7 +3,7 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Phone, Calendar, Edit } from 'lucide-react';
+import { User, Mail, Calendar, Edit, Shield } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import ProfileModal from '@/components/auth/ProfileModal';
@@ -77,25 +77,14 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Username */}
+                {/* Full Name */}
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gold-600 bg-opacity-10 rounded-full flex items-center justify-center">
                     <User className="text-gold-600" size={20} />
                   </div>
                   <div>
-                    <p className="text-sm text-charcoal-600">Username</p>
-                    <p className="text-lg font-medium text-navy-900">{user?.username}</p>
-                  </div>
-                </div>
-
-                {/* Phone */}
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gold-600 bg-opacity-10 rounded-full flex items-center justify-center">
-                    <Phone className="text-gold-600" size={20} />
-                  </div>
-                  <div>
-                    <p className="text-sm text-charcoal-600">Phone</p>
-                    <p className="text-lg font-medium text-navy-900">{user?.phone}</p>
+                    <p className="text-sm text-charcoal-600">Full Name</p>
+                    <p className="text-lg font-medium text-navy-900">{user?.full_name || 'Not set'}</p>
                   </div>
                 </div>
 
@@ -116,14 +105,14 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* Account Status */}
+                {/* Role */}
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-green-600 bg-opacity-10 rounded-full flex items-center justify-center">
-                    <div className="w-3 h-3 bg-green-600 rounded-full"></div>
+                    <Shield className="text-green-600" size={20} />
                   </div>
                   <div>
-                    <p className="text-sm text-charcoal-600">Account Status</p>
-                    <p className="text-lg font-medium text-green-600 capitalize">{user?.status}</p>
+                    <p className="text-sm text-charcoal-600">Role</p>
+                    <p className="text-lg font-medium text-green-600 capitalize">{user?.role}</p>
                   </div>
                 </div>
               </div>
