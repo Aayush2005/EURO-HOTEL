@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterator
+import json
 from typing import Any
 
 import asyncpg
@@ -8,6 +9,21 @@ from app.config import settings
 
 
 pool: Pool | None = None
+
+
+async def _init_connection(conn: asyncpg.Connection) -> None:
+    await conn.set_type_codec(
+        "jsonb",
+        encoder=json.dumps,
+        decoder=json.loads,
+        schema="pg_catalog",
+    )
+    await conn.set_type_codec(
+        "json",
+        encoder=json.dumps,
+        decoder=json.loads,
+        schema="pg_catalog",
+    )
 
 
 async def init_db_pool() -> None:
@@ -21,6 +37,7 @@ async def init_db_pool() -> None:
         max_size=settings.db_pool_max_size,
         command_timeout=30,
         statement_cache_size=0,
+        init=_init_connection,
     )
 
 

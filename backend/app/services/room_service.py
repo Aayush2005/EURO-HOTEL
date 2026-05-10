@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from typing import Any
 
@@ -17,9 +18,9 @@ def _serialize_room(row: dict) -> dict[str, Any]:
         "room_final_price": float(row["room_final_price"]),
         "max_occupancy": int(row["max_occupancy"] or 0),
         "available_rooms": int(row["available_rooms"] or 0),
-        "amenities": row["amenities"] or [],
+        "amenities": json.loads(row["amenities"]) if isinstance(row["amenities"], str) else (row["amenities"] or []),
         "description": row["description"],
-        "image_urls": row["image_urls"] if row["image_urls"] is not None else [],
+        "image_urls": json.loads(row["image_urls"]) if isinstance(row["image_urls"], str) else (row["image_urls"] or []),
     }
 
 
