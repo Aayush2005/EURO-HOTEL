@@ -81,7 +81,7 @@ const Footer = () => {
               </div>
               <div>
                 <p className="font-medium text-white mb-1">Email</p>
-                <p>reservations@eurohotel.in</p>
+                <p>reservation@eurohotel.in</p>
               </div>
             </div>
           </div>

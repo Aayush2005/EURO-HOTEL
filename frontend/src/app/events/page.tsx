@@ -263,7 +263,7 @@ const EventsPage = () => {
                   </h3>
                   <div className="space-y-3 text-white opacity-90">
                     <p>+91 77299 00091</p>
-                    <p>reservations@eurohotel.in</p>
+                    <p>reservation@eurohotel.in</p>
                     <p>Available 24/7</p>
                   </div>
                 </div>
