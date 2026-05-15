@@ -1,29 +1,45 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, Lock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { supabase } from '@/lib/supabase';
 import SolidHeader from '@/components/SolidHeader';
 import Footer from '@/components/Footer';
+import { Suspense } from 'react';
 
-export default function ResetPasswordPage() {
+function ResetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isReady, setIsReady] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Supabase puts the recovery token in the URL hash; the SDK picks it up via onAuthStateChange
-    const { data } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setIsReady(true);
-    });
-    return () => data.subscription.unsubscribe();
-  }, []);
+    const code = searchParams.get('code');
+
+    if (code) {
+      // PKCE flow — exchange the code for a session
+      supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+        if (error) {
+          setError('This reset link is invalid or has expired. Please request a new one.');
+        } else {
+          setIsReady(true);
+        }
+      });
+    } else {
+      // Hash-based flow — wait for PASSWORD_RECOVERY event
+      const { data } = supabase.auth.onAuthStateChange((event) => {
+        if (event === 'PASSWORD_RECOVERY') setIsReady(true);
+      });
+      return () => data.subscription.unsubscribe();
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,83 +66,102 @@ export default function ResetPasswordPage() {
   };
 
   return (
+    <motion.div
+      className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+    >
+      <h1 className="text-3xl font-serif font-semibold text-navy-900 mb-2">
+        Reset Password
+      </h1>
+      <p className="text-charcoal-600 text-sm mb-8">
+        Enter your new password below.
+      </p>
+
+      {error ? (
+        <div className="text-center space-y-4">
+          <p className="text-red-600 text-sm">{error}</p>
+          <button
+            onClick={() => router.push('/')}
+            className="w-full btn-gold py-3"
+          >
+            Back to Home
+          </button>
+        </div>
+      ) : !isReady ? (
+        <div className="text-center py-8">
+          <div className="w-8 h-8 border-2 border-gold-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-charcoal-500 text-sm">Validating reset link…</p>
+        </div>
+      ) : (
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-charcoal-700">
+              New Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full pl-10 pr-10 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                placeholder="Min. 6 characters"
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal-500 hover:text-charcoal-700"
+              >
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              </button>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-charcoal-700">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
+              <input
+                type={showPassword ? 'text' : 'password'}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                placeholder="Repeat password"
+                required
+                minLength={6}
+                autoComplete="new-password"
+              />
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="w-full btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? 'Updating…' : 'Update Password'}
+          </button>
+        </form>
+      )}
+    </motion.div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
     <div className="min-h-screen bg-off-white">
       <SolidHeader />
       <main className="pt-32 pb-20 flex items-center justify-center px-4">
-        <motion.div
-          className="w-full max-w-md bg-white rounded-2xl shadow-lg p-8"
-          initial={{ opacity: 0, y: 24 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <h1 className="text-3xl font-serif font-semibold text-navy-900 mb-2">
-            Reset Password
-          </h1>
-          <p className="text-charcoal-600 text-sm mb-8">
-            Enter your new password below.
-          </p>
-
-          {!isReady ? (
-            <p className="text-center text-charcoal-500 text-sm py-8">
-              Validating reset link…
-            </p>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-charcoal-700">
-                  New Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full pl-10 pr-10 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                    placeholder="Min. 6 characters"
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((v) => !v)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-charcoal-500 hover:text-charcoal-700"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-charcoal-700">
-                  Confirm Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={confirm}
-                    onChange={(e) => setConfirm(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                    placeholder="Repeat password"
-                    required
-                    minLength={6}
-                    autoComplete="new-password"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Updating…' : 'Update Password'}
-              </button>
-            </form>
-          )}
-        </motion.div>
+        <Suspense fallback={<div className="w-8 h-8 border-2 border-gold-500 border-t-transparent rounded-full animate-spin" />}>
+          <ResetPasswordForm />
+        </Suspense>
       </main>
       <Footer />
     </div>
