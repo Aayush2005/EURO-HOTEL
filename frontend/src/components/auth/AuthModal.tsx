@@ -15,12 +15,12 @@ interface AuthModalProps {
   initialMode?: 'login' | 'register';
 }
 
-type Step = 'login' | 'register' | 'verify';
+type Step = 'login' | 'register' | 'verify' | 'forgot' | 'forgot-sent';
 
 const OTP_LENGTH = 6;
 
 const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'login' }) => {
-  const { signIn, signUp, verifySignupOtp, updateProfile } = useAuth();
+  const { signIn, signUp, verifySignupOtp, forgotPassword, updateProfile } = useAuth();
 
   const [step, setStep] = useState<Step>(initialMode);
   const [email, setEmail] = useState('');
@@ -139,6 +139,19 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     }
   };
 
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await forgotPassword(email);
+      setStep('forgot-sent');
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to send reset email.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleResendOtp = async () => {
     setIsLoading(true);
     try {
@@ -182,10 +195,13 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-muted-beige">
               <div className="flex items-center gap-3">
-                {step === 'verify' && (
+                {(step === 'verify' || step === 'forgot' || step === 'forgot-sent') && (
                   <button
                     type="button"
-                    onClick={() => { setStep('register'); setOtp(Array(OTP_LENGTH).fill('')); }}
+                    onClick={() => {
+                      if (step === 'verify') { setStep('register'); setOtp(Array(OTP_LENGTH).fill('')); }
+                      else { setStep('login'); }
+                    }}
                     className="p-1 text-charcoal-600 hover:text-navy-900 transition-colors"
                     aria-label="Go back"
                   >
@@ -193,7 +209,11 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   </button>
                 )}
                 <h2 className="text-2xl font-serif font-semibold text-navy-900">
-                  {step === 'login' ? 'Sign In' : step === 'register' ? 'Create Account' : 'Verify Email'}
+                  {step === 'login' ? 'Sign In'
+                    : step === 'register' ? 'Create Account'
+                    : step === 'verify' ? 'Verify Email'
+                    : step === 'forgot' ? 'Forgot Password'
+                    : 'Check Your Email'}
                 </h2>
               </div>
               <button
@@ -249,6 +269,16 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   </div>
                 </div>
 
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setStep('forgot')}
+                    className="text-sm text-gold-600 hover:text-gold-700 hover:underline underline-offset-2"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -265,6 +295,76 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   </button>
                 </p>
               </form>
+            )}
+
+            {/* ── Forgot Password ── */}
+            {step === 'forgot' && (
+              <form onSubmit={handleForgotSubmit} className="p-6 space-y-5">
+                <p className="text-sm text-charcoal-600 text-center">
+                  Enter your email and we&apos;ll send you a link to reset your password.
+                </p>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-charcoal-700">Email</label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                      placeholder="you@example.com"
+                      required
+                      autoComplete="email"
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? 'Sending...' : 'Send Reset Link'}
+                </button>
+                <p className="text-center text-sm text-charcoal-500">
+                  Remembered it?{' '}
+                  <button type="button" onClick={() => setStep('login')}
+                    className="text-gold-600 hover:text-gold-700 font-medium hover:underline underline-offset-2">
+                    Sign in
+                  </button>
+                </p>
+              </form>
+            )}
+
+            {/* ── Forgot Sent ── */}
+            {step === 'forgot-sent' && (
+              <div className="p-6 space-y-5 text-center">
+                <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto">
+                  <Mail className="text-green-600" size={28} />
+                </div>
+                <p className="text-charcoal-700">
+                  We&apos;ve sent a password reset link to{' '}
+                  <span className="font-medium text-navy-900">{email}</span>.
+                  <br />Check your inbox and follow the link.
+                </p>
+                <p className="text-sm text-charcoal-500">
+                  Didn&apos;t get it?{' '}
+                  <button
+                    type="button"
+                    onClick={handleForgotSubmit as any}
+                    disabled={isLoading}
+                    className="text-gold-600 hover:text-gold-700 font-medium hover:underline underline-offset-2 disabled:opacity-50"
+                  >
+                    Resend
+                  </button>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setStep('login')}
+                  className="w-full btn-outline-gold py-3"
+                >
+                  Back to Sign In
+                </button>
+              </div>
             )}
 
             {/* ── Register ── */}
