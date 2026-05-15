@@ -15,8 +15,8 @@ WHERE id = $1;
 """
 
 UPSERT_AUTH_USER_SQL = f"""
-INSERT INTO hotel.users (id, email, role, last_login_at)
-VALUES ($1, $2, 'user', NOW())
+INSERT INTO hotel.users (id, email, role, is_active, last_login_at)
+VALUES ($1, $2, 'user', true, NOW())
 ON CONFLICT (id)
 DO UPDATE SET
     email = EXCLUDED.email,
