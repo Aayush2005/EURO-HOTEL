@@ -42,3 +42,5 @@ test-*.js
 tests/
 Euro Hotels - Food Shots Insta/
 Euro Hotels Interiors/
+
+admin/node_modules/

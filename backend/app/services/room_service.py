@@ -12,6 +12,7 @@ GET_ROOM_BY_TYPE_SQL = (QUERY_DIR / "get_room_by_type.sql").read_text(encoding="
 
 def _serialize_room(row: dict) -> dict[str, Any]:
     return {
+        "room_type_id": int(row["room_type_id"]),
         "room_type": row["room_type"],
         "room_base_price": float(row["room_base_price"]),
         "tax_percent": float(row["tax_percent"]),

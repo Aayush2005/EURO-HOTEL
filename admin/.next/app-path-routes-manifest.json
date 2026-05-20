@@ -1,0 +1,12 @@
+{
+  "/api/auth/login/route": "/api/auth/login",
+  "/_not-found/page": "/_not-found",
+  "/api/auth/logout/route": "/api/auth/logout",
+  "/api/bookings/[id]/approve-cancellation/route": "/api/bookings/[id]/approve-cancellation",
+  "/api/bookings/[id]/auto-allocate/route": "/api/bookings/[id]/auto-allocate",
+  "/api/bookings/route": "/api/bookings",
+  "/api/bookings/[id]/reject-cancellation/route": "/api/bookings/[id]/reject-cancellation",
+  "/dashboard/page": "/dashboard",
+  "/login/page": "/login",
+  "/page": "/"
+}

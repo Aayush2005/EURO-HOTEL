@@ -77,12 +77,9 @@ const RoomCard: React.FC<RoomCardProps> = memo(({ room, index, getRoomTypeLabel 
             </div>
             <div className="text-sm text-charcoal-600">per night + taxes</div>
           </div>
-          <button
-            disabled
-            className="px-4 py-2 text-sm bg-gray-200 text-gray-400 cursor-not-allowed rounded"
-          >
-            Book Now
-          </button>
+          <span className={room.available_rooms === 0 ? 'px-4 py-2 text-sm rounded font-medium bg-gray-200 text-gray-400' : 'btn-gold'}>
+            {room.available_rooms === 0 ? 'Sold Out' : 'Book Now'}
+          </span>
         </div>
       </div>
       </Link>

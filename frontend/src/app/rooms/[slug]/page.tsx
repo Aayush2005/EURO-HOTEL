@@ -17,6 +17,8 @@ import OrbitalLoader from '@/components/OrbitalLoader';
 import ComingSoon from '@/components/ComingSoon';
 import { PAGE_CONFIG } from '@/lib/page-config';
 import { resolveRoomImageUrls } from '@/lib/room-images';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAuthModal } from '@/contexts/AuthModalContext';
 
 
 interface RoomImage {
@@ -27,6 +29,7 @@ interface RoomImage {
 }
 
 interface Room {
+  room_type_id: number;
   room_type: string;
   room_base_price: number;
   tax_percent: number;
@@ -54,6 +57,8 @@ const buildRoomImages = (roomType: string, imageUrlsFromApi?: unknown): RoomImag
 export default function RoomDetailsPage() {
   const params = useParams();
   const slug = params.slug as string;
+  const { isAuthenticated } = useAuth();
+  const { openAuthModal } = useAuthModal();
   
   // Check if room details are disabled
   if (PAGE_CONFIG.ROOM_DETAILS_DISABLED) {
@@ -421,12 +426,19 @@ export default function RoomDetailsPage() {
                   </div>
                 </div>
 
-                <a
-                  href="tel:+917729900091"
-                  className="w-full btn-gold py-4 text-lg font-semibold mb-4 text-center block"
+                <button
+                  onClick={() => {
+                    if (!isAuthenticated) {
+                      openAuthModal('login');
+                    } else {
+                      setIsBookingModalOpen(true);
+                    }
+                  }}
+                  disabled={room.available_rooms === 0}
+                  className="w-full btn-gold py-4 text-lg font-semibold mb-4 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  For Booking Call +91 77299 00091
-                </a>
+                  {room.available_rooms === 0 ? 'Sold Out' : isAuthenticated ? 'Book Now' : 'Sign in to Book'}
+                </button>
 
                 <div className="text-center text-sm text-charcoal-600 mb-4">
                   Free cancellation • No booking fees
@@ -567,6 +579,17 @@ export default function RoomDetailsPage() {
           </div>
         </div>
       )}
+
+      <BookingModal
+        isOpen={isBookingModalOpen}
+        onClose={() => setIsBookingModalOpen(false)}
+        room={{
+          room_type_id: room.room_type_id,
+          title: room.room_type.charAt(0).toUpperCase() + room.room_type.slice(1),
+          base_price: room.room_base_price,
+          max_occupancy: room.max_occupancy,
+        }}
+      />
 
       </div>
     </SimplePageWrapper>

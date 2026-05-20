@@ -4,18 +4,16 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, BedDouble } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthModal } from '@/contexts/AuthModalContext';
 import AuthModal from '@/components/auth/AuthModal';
-import ProfileModal from '@/components/auth/ProfileModal';
 import { useClickOutside } from '@/hooks/useClickOutside';
 import { PAGE_CONFIG } from '@/lib/page-config';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   
   const { user, isAuthenticated, isLoading, logout } = useAuth();
@@ -169,16 +167,22 @@ const Header = () => {
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.2 }}
                   >
-                    <button
-                      onClick={() => {
-                        setIsProfileModalOpen(true);
-                        setShowUserMenu(false);
-                      }}
+                    <Link
+                      href="/profile"
+                      onClick={() => setShowUserMenu(false)}
                       className="w-full px-4 py-3 text-left text-charcoal-700 hover:bg-white/50 transition-colors flex items-center space-x-2 rounded-t-lg"
                     >
                       <User size={16} />
-                      <span>Profile</span>
-                    </button>
+                      <span>My Profile</span>
+                    </Link>
+                    <Link
+                      href="/profile#bookings"
+                      onClick={() => setShowUserMenu(false)}
+                      className="w-full px-4 py-3 text-left text-charcoal-700 hover:bg-white/50 transition-colors flex items-center space-x-2 border-t border-white/10"
+                    >
+                      <BedDouble size={16} />
+                      <span>My Bookings</span>
+                    </Link>
                     <button
                       onClick={() => {
                         logout();
@@ -328,19 +332,33 @@ const Header = () => {
                     animate="open"
                     exit="closed"
                   >
-                    <button
-                      onClick={() => {
-                        setIsProfileModalOpen(true);
-                        setIsMenuOpen(false);
-                      }}
+                    <Link
+                      href="/profile"
+                      onClick={() => setIsMenuOpen(false)}
                       className="block text-white hover:text-yellow-400 transition-colors py-3 font-medium tracking-wide"
                     >
-                      PROFILE ({user?.full_name?.split(' ')[0] || user?.email})
-                    </button>
+                      MY PROFILE
+                    </Link>
                   </motion.div>
-                  
+
                   <motion.div
                     custom={6}
+                    variants={menuItemVariants}
+                    initial="closed"
+                    animate="open"
+                    exit="closed"
+                  >
+                    <Link
+                      href="/profile#bookings"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="block text-white hover:text-yellow-400 transition-colors py-3 font-medium tracking-wide"
+                    >
+                      MY BOOKINGS
+                    </Link>
+                  </motion.div>
+
+                  <motion.div
+                    custom={7}
                     variants={menuItemVariants}
                     initial="closed"
                     animate="open"
@@ -386,11 +404,6 @@ const Header = () => {
         initialMode={authMode}
       />
 
-      {/* Profile Modal */}
-      <ProfileModal
-        isOpen={isProfileModalOpen}
-        onClose={() => setIsProfileModalOpen(false)}
-      />
     </motion.header>
   );
 };

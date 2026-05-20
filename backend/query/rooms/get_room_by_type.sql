@@ -1,4 +1,5 @@
 SELECT
+    rt.id AS room_type_id,
     rt.name AS room_type,
     rt.base_price AS room_base_price,
     rt.tax_percent AS tax_percent,

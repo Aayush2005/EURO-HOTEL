@@ -14,6 +14,20 @@ class Settings(BaseSettings):
     supabase_url: AnyHttpUrl = Field(..., alias="SUPABASE_URL")
     supabase_jwt_secret: str = Field(default="", alias="SUPABASE_JWT_SECRET")
 
+    hdfc_api_key: str = Field(default="", alias="HDFC_API_KEY")
+    hdfc_merchant_id: str = Field(default="", alias="HDFC_MERCHANT_ID")
+    hdfc_base_url: str = Field(default="", alias="HDFC_BASE_URL")
+    hdfc_payment_page_client_id: str = Field(default="hdfcmaster", alias="HDFC_PAYMENT_PAGE_CLIENT_ID")
+    hdfc_response_key: str = Field(alias="HDFC_RESPONSE_KEY")
+    hdfc_reseller_id: str = Field(default="hdfc_reseller", alias="HDFC_RESELLER_ID")
+    hdfc_enable_logging: bool = Field(default=False, alias="HDFC_ENABLE_LOGGING")
+
+    smtp_host: str = Field(default="", alias="SMTP_HOST")
+    smtp_port: int = Field(default=587, alias="SMTP_PORT")
+    smtp_username: str = Field(default="", alias="SMTP_USERNAME")
+    smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
+    otp_expire_minutes: int = Field(default=10, alias="OTP_EXPIRE_MINUTES")
+
     environment: str = Field(default="development", alias="ENVIRONMENT")
     debug: bool = Field(default=False, alias="DEBUG")
     frontend_url: str = Field(default="http://localhost:3000", alias="FRONTEND_URL")

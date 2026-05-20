@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint"
   },
@@ -13,7 +13,7 @@
     "@vercel/speed-insights": "^1.2.0",
     "framer-motion": "^12.23.22",
     "lucide-react": "^0.545.0",
-    "next": "^15.5.15",
+    "next": "^15.3.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-hook-form": "^7.64.0",

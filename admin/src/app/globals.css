@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy-950: #060e1f;
+  --color-navy-900: #0B1D3A;
+  --color-navy-800: #122342;
+  --color-navy-700: #1a2f58;
+
+  --color-gold-700: #A6841F;
+  --color-gold-600: #C9A227;
+  --color-gold-500: #D4A843;
+  --color-gold-400: #D4B332;
+  --color-gold-100: #fdf0c0;
+  --color-gold-50: #FDF8EC;
+
+  --color-charcoal-700: #2C2C2C;
+  --color-charcoal-600: #3C3C3C;
+  --color-charcoal-500: #5C5C5C;
+  --color-charcoal-400: #8C8C8C;
+
+  --font-serif: 'Georgia', 'Times New Roman', serif;
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.btn-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.15s;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

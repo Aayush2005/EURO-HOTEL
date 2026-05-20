@@ -2,17 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, Calendar, Users, CreditCard, Clock, 
-  CheckCircle, AlertCircle, Minus, Plus, Phone 
+import {
+  X, Calendar, Users, CreditCard,
+  CheckCircle, Minus, Plus, Phone, UserCheck
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useAuthModal } from '@/contexts/AuthModalContext';
 import CountryCodeDropdown from '@/components/ui/CountryCodeDropdown';
 
 interface Room {
-  id: string;
+  room_type_id: number;
   title: string;
   base_price: number;
   max_occupancy: number;
@@ -26,28 +25,15 @@ interface BookingModalProps {
 
 interface PricingBreakdown {
   subtotal: number;
-  gst: number;
-  service_charge: number;
-  discount_amount: number;
+  tax: number;
   total_amount: number;
-  currency: string;
   nights: number;
-  available: boolean;
-}
-
-interface GuestDetails {
-  name: string;
-  email: string;
-  phone: string;
-  id_type: string;
-  id_number: string;
 }
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) => {
-  const { user, isAuthenticated, authenticatedFetch } = useAuth();
-  const { openAuthModal } = useAuthModal();
+  const { user, authenticatedFetch } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
@@ -57,62 +43,90 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
     return d.toISOString().split('T')[0];
   }, []);
 
-  // Prevent body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'unset';
     }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
+    return () => { document.body.style.overflow = 'unset'; };
   }, [isOpen]);
-  
-  // Step 1: Date and Guest Selection
+
+  // Step 1
   const [checkInDate, setCheckInDate] = useState('');
   const [checkOutDate, setCheckOutDate] = useState('');
   const [guests, setGuests] = useState(1);
   const [rooms, setRooms] = useState(1);
-
   const [pricing, setPricing] = useState<PricingBreakdown | null>(null);
-  
-  // Step 2: Guest Details
-  const [guestDetails, setGuestDetails] = useState<GuestDetails>({
-    name: '',
-    email: '',
-    phone: '',
-    id_type: 'aadhar',
-    id_number: ''
-  });
+  const [availableRooms, setAvailableRooms] = useState<number | null>(null);
+  const [availabilityLoading, setAvailabilityLoading] = useState(false);
+
+  // Step 2
+  const [bookForSelf, setBookForSelf] = useState(true);
+  const [guestName, setGuestName] = useState('');
+  const [guestEmail, setGuestEmail] = useState('');
   const [countryCode, setCountryCode] = useState('+91');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [specialRequests, setSpecialRequests] = useState('');
-  const [holdToken, setHoldToken] = useState('');
-  const [holdExpiresAt, setHoldExpiresAt] = useState<Date | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState(0);
-  
-  // Step 3: Payment
-  const [bookingReference, setBookingReference] = useState('');
 
+  // Step 3
+  const [bookingReference, setBookingReference] = useState('');
+  const [holdToken, setHoldToken] = useState('');
+  const [paymentUrl, setPaymentUrl] = useState('');
+  const [holdExpiresAt, setHoldExpiresAt] = useState<Date | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+  const [confirmed, setConfirmed] = useState(false);
+
+  // Countdown timer for hold expiry
   useEffect(() => {
-    if (holdExpiresAt) {
-      const interval = setInterval(() => {
-        const now = new Date().getTime();
-        const expiry = new Date(holdExpiresAt).getTime();
-        const remaining = Math.max(0, expiry - now);
-        setTimeRemaining(remaining);
-        
-        if (remaining === 0) {
-          toast.error('Booking hold expired. Please start again.');
-          handleClose();
-        }
-      }, 1000);
-      
-      return () => clearInterval(interval);
-    }
+    if (!holdExpiresAt) { setTimeLeft(null); return; }
+    const tick = () => {
+      const ms = holdExpiresAt.getTime() - Date.now();
+      setTimeLeft(ms > 0 ? ms : 0);
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
   }, [holdExpiresAt]);
+
+  // Fetch live availability whenever dates change
+  useEffect(() => {
+    if (!checkInDate || !checkOutDate || new Date(checkOutDate) <= new Date(checkInDate)) {
+      setAvailableRooms(null);
+      return;
+    }
+    let cancelled = false;
+    setAvailabilityLoading(true);
+    fetch(`${API_URL}/bookings/availability/${room.room_type_id}?check_in=${checkInDate}&check_out=${checkOutDate}`)
+      .then(r => r.json())
+      .then(data => {
+        if (cancelled) return;
+        const av = typeof data.available === 'number' ? data.available : null;
+        setAvailableRooms(av);
+        if (av !== null && rooms > av) setRooms(Math.max(1, av));
+      })
+      .catch(() => { if (!cancelled) setAvailableRooms(null); })
+      .finally(() => { if (!cancelled) setAvailabilityLoading(false); });
+    return () => { cancelled = true; };
+  }, [checkInDate, checkOutDate, room.room_type_id]);
+
+  // When "book for self" is toggled, sync user profile data
+  useEffect(() => {
+    if (bookForSelf && user) {
+      setGuestName(user.full_name || '');
+      setGuestEmail(user.email || '');
+      if (user.phone) {
+        const digits = user.phone.replace(/\D/g, '');
+        setPhoneNumber(digits.length > 10 ? digits.slice(-10) : digits);
+      } else {
+        setPhoneNumber('');
+      }
+    } else if (!bookForSelf) {
+      setGuestName('');
+      setGuestEmail('');
+      setPhoneNumber('');
+    }
+  }, [bookForSelf, user]);
 
   const handleClose = () => {
     setStep(1);
@@ -120,220 +134,186 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
     setCheckOutDate('');
     setGuests(1);
     setRooms(1);
-
     setPricing(null);
-    setGuestDetails({
-      name: '',
-      email: '',
-      phone: '',
-      id_type: 'aadhar',
-      id_number: ''
-    });
+    setAvailableRooms(null);
+    setAvailabilityLoading(false);
+    setBookForSelf(true);
+    setGuestName('');
+    setGuestEmail('');
     setCountryCode('+91');
     setPhoneNumber('');
     setSpecialRequests('');
     setHoldToken('');
-    setHoldExpiresAt(null);
     setBookingReference('');
+    setPaymentUrl('');
+    setHoldExpiresAt(null);
+    setTimeLeft(null);
+    setConfirmed(false);
     onClose();
   };
 
-  const formatTime = (milliseconds: number) => {
-    const minutes = Math.floor(milliseconds / 60000);
-    const seconds = Math.floor((milliseconds % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  const formatTime = (ms: number) => {
+    const m = Math.floor(ms / 60000);
+    const s = Math.floor((ms % 60000) / 1000);
+    return `${m}:${s.toString().padStart(2, '0')}`;
   };
 
-  const calculatePrice = async () => {
+  const TAX_RATE = 0.05;
+
+  const calculatePrice = () => {
     if (!checkInDate || !checkOutDate) {
       toast.error('Please select check-in and check-out dates');
       return;
     }
-
     if (new Date(checkInDate) >= new Date(checkOutDate)) {
       toast.error('Check-out date must be after check-in date');
       return;
     }
-
-    console.log('Sending price check request:', {
-      room_id: room.id,
-      start_date: checkInDate,
-      end_date: checkOutDate,
-      guests: guests,
-      promo_code: null
-    });
-
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_URL}/api/bookings/price-check`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          room_id: room.id,
-          start_date: checkInDate,
-          end_date: checkOutDate,
-          guests: guests,
-          promo_code: null
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: 'Unknown error' }));
-        console.error('Price check error:', response.status, errorData);
-        throw new Error(`Failed to calculate price: ${errorData.detail || 'Unknown error'}`);
-      }
-
-      const pricingData = await response.json();
-      setPricing(pricingData);
-
-      if (!pricingData.available) {
-        toast.error('Room not available for selected dates');
-        return;
-      }
-
-      // Check if user is authenticated before proceeding
-      if (!isAuthenticated) {
-        onClose(); // Close the booking modal
-        openAuthModal('login'); // Open the header's auth modal
-        return;
-      }
-
-      // Pre-fill guest details with user info
-      if (user) {
-        setGuestDetails({
-          name: user.full_name || '',
-          email: user.email || '',
-          phone: '',
-          id_type: 'aadhar',
-          id_number: ''
-        });
-      }
-
-      setStep(2);
-    } catch (error) {
-      console.error('Error calculating price:', error);
-      toast.error('Failed to calculate price');
-    } finally {
-      setLoading(false);
-    }
+    const nights = Math.max(1, Math.ceil(
+      (new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / 86400000
+    ));
+    const subtotal = room.base_price * rooms * nights;
+    const tax = subtotal * TAX_RATE;
+    setPricing({ subtotal, tax, total_amount: subtotal + tax, nights });
+    setStep(2);
   };
+
+  const fullPhone = `${countryCode}${phoneNumber}`;
 
   const createHold = async () => {
-    if (!guestDetails.name || !guestDetails.email || !guestDetails.phone || !guestDetails.id_number) {
-      toast.error('Please fill in all required guest details');
-      return;
-    }
+    if (!guestName.trim()) { toast.error('Guest name is required'); return; }
+    if (!guestEmail.trim()) { toast.error('Guest email is required'); return; }
+    if (!phoneNumber.trim()) { toast.error('Phone number is required'); return; }
 
     setLoading(true);
     try {
-      const idempotencyKey = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      
-      const response = await authenticatedFetch('/api/bookings/hold', {
+      const idempotencyKey = crypto.randomUUID();
+      const response = await authenticatedFetch('/bookings/create', {
         method: 'POST',
         body: JSON.stringify({
-          room_id: room.id,
-          start_date: checkInDate,
-          end_date: checkOutDate,
-          guests: guests,
-          guest_details: guestDetails,
-          special_requests: specialRequests || null,
-          promo_code: null,
-          idempotency_key: idempotencyKey
-        })
+          idempotency_key: idempotencyKey,
+          guest_name: guestName.trim(),
+          guest_email: guestEmail.trim(),
+          guest_phone: fullPhone,
+          total_guests: guests,
+          check_in: checkInDate,
+          check_out: checkOutDate,
+          special_requests: specialRequests.trim() || null,
+          rooms: [{ room_type_id: room.room_type_id, quantity: rooms, guests_count: guests }],
+        }),
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to create booking hold');
+        let detail = 'Booking failed';
+        try {
+          const body = await response.json();
+          if (typeof body.detail === 'string') detail = body.detail;
+          else if (typeof body.message === 'string') detail = body.message;
+        } catch {}
+        throw new Error(detail);
       }
 
-      const holdData = await response.json();
-      setHoldToken(holdData.hold_token);
-      setHoldExpiresAt(new Date(holdData.expires_at));
-      setBookingReference(holdData.booking.booking_reference);
+      const data = await response.json();
+      setHoldToken(data.payment.order_id);
+      setBookingReference(data.booking_reference);
+      setPaymentUrl(data.payment.payment_links?.web || '');
+      if (data.hold_expires_at) setHoldExpiresAt(new Date(data.hold_expires_at));
       setStep(3);
-      
-      toast.success('Booking hold created successfully!');
+      toast.success('Booking created! Proceed to payment.');
     } catch (error: any) {
-      console.error('Error creating hold:', error);
-      toast.error(error.message || 'Failed to create booking hold');
+      toast.error(error.message || 'Failed to create booking');
     } finally {
       setLoading(false);
     }
   };
 
-  const confirmBooking = async () => {
-    if (!holdToken) {
-      toast.error('No booking hold found');
+  // Auto-detect payment: poll every 5s + listen for BroadcastChannel from the payment tab
+  useEffect(() => {
+    if (step !== 3 || !holdToken) return;
+
+    let active = true;
+
+    const applyStatus = (paymentStatus: string) => {
+      if (!active) return;
+      if (paymentStatus === 'success') {
+        active = false;
+        setConfirmed(true);
+      } else if (paymentStatus === 'failed' || paymentStatus === 'expired') {
+        active = false;
+        toast.error(`Payment ${paymentStatus}. Please try again or contact support.`);
+      }
+    };
+
+    // Instant notification when the payment tab finishes
+    const channel = typeof BroadcastChannel !== 'undefined'
+      ? new BroadcastChannel('euro_hotel_payment') : null;
+    if (channel) {
+      channel.onmessage = (e) => {
+        if (e.data?.order_id === holdToken) applyStatus(e.data.payment_status);
+      };
+    }
+
+    const poll = async () => {
+      if (!active) return;
+      try {
+        const res = await authenticatedFetch(`/payments/status/${holdToken}`);
+        if (!res.ok) return;
+        const data = await res.json();
+        applyStatus(data.payment_status);
+      } catch {}
+    };
+
+    const id = setInterval(poll, 5000);
+
+    return () => {
+      active = false;
+      clearInterval(id);
+      channel?.close();
+    };
+  }, [step, holdToken]); // authenticatedFetch is stable from context
+
+  const openPaymentPage = () => {
+    if (!paymentUrl) {
+      toast.error('Payment link not available. Please contact support.');
       return;
     }
+    window.open(paymentUrl, '_blank', 'noopener,noreferrer');
+  };
 
+  const verifyPayment = async () => {
+    if (!holdToken) { toast.error('No payment order found'); return; }
     setLoading(true);
     try {
-      const response = await authenticatedFetch('/api/bookings/confirm', {
-        method: 'POST',
-        body: JSON.stringify({
-          hold_token: holdToken,
-          idempotency_key: holdToken // Using hold_token as idempotency_key
-        })
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.detail || 'Failed to confirm booking');
+      const res = await authenticatedFetch(`/payments/status/${holdToken}`);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ detail: 'Status check failed' }));
+        throw new Error(err.detail || 'Status check failed');
       }
-
-      const bookingData = await response.json();
-      
-      // Create payment session
-      const paymentResponse = await authenticatedFetch('/api/payments/create-session', {
-        method: 'POST',
-        body: JSON.stringify({
-          booking_id: bookingData.id
-        })
-      });
-
-      if (!paymentResponse.ok) {
-        throw new Error('Failed to create payment session');
+      const data = await res.json();
+      if (data.payment_status === 'success') {
+        setConfirmed(true);
+        return;
       }
-
-      const paymentData = await paymentResponse.json();
-      
-      // Here you would integrate with Razorpay
-      toast.success('Booking confirmed! Redirecting to payment...');
-      
-      // For now, just show success
-      setTimeout(() => {
-        handleClose();
-        window.location.href = `/booking-confirmation/${bookingData.booking_reference}`;
-      }, 2000);
-      
+      if (data.payment_status === 'failed' || data.payment_status === 'expired') {
+        toast.error(`Payment ${data.payment_status}. Please try again or contact support.`);
+        return;
+      }
+      toast.error('Payment not yet completed. Please pay on the gateway first.');
     } catch (error: any) {
-      console.error('Error confirming booking:', error);
-      toast.error(error.message || 'Failed to confirm booking');
+      toast.error(error.message || 'Failed to verify payment');
     } finally {
       setLoading(false);
     }
-  };
-
-  const modalVariants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: { opacity: 1, scale: 1 },
-    exit: { opacity: 0, scale: 0.8 }
   };
 
   return (
-    <>
-      <AnimatePresence>
+    <AnimatePresence>
       {isOpen && (
         <motion.div
           className="fixed inset-0 z-[9998] flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          style={{ zIndex: 9998 }}
         >
           {/* Backdrop */}
           <motion.div
@@ -342,17 +322,15 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={handleClose}
-            style={{ zIndex: 9997 }}
           />
 
           {/* Modal */}
           <motion.div
             className="relative w-full max-w-2xl bg-off-white rounded-lg shadow-2xl max-h-[90vh] overflow-y-auto"
-            variants={modalVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            transition={{ duration: 0.3 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={{ duration: 0.25 }}
             style={{ zIndex: 9999 }}
           >
             {/* Header */}
@@ -361,37 +339,29 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
                 <h2 className="text-2xl font-serif font-semibold text-navy-900">
                   Book {room.title}
                 </h2>
-              </div>
-              
-              {holdExpiresAt && timeRemaining > 0 && (
-                <div className="text-center">
-                  <div className="text-sm text-charcoal-600">Hold expires in</div>
-                  <div className="text-lg font-bold text-red-600">
-                    {formatTime(timeRemaining)}
-                  </div>
+                <div className="flex gap-6 mt-2">
+                  {['Dates', 'Guest Details', 'Payment'].map((label, i) => (
+                    <span key={label} className={`text-xs font-medium ${step === i + 1 ? 'text-gold-600' : 'text-charcoal-400'}`}>
+                      {i + 1}. {label}
+                    </span>
+                  ))}
                 </div>
-              )}
-              
-              <button
-                onClick={handleClose}
-                className="p-2 text-charcoal-600 hover:text-navy-900 transition-colors"
-              >
+              </div>
+              <button onClick={handleClose} className="p-2 text-charcoal-600 hover:text-navy-900 transition-colors">
                 <X size={20} />
               </button>
             </div>
 
-            {/* Content */}
             <div className="p-6">
-              {/* Step 1: Date and Guest Selection */}
+
+              {/* ── Step 1: Dates & Rooms ── */}
               {step === 1 && (
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                        Check-in Date
-                      </label>
+                      <label className="block text-sm font-medium text-charcoal-700 mb-2">Check-in Date</label>
                       <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
                         <input
                           type="date"
                           value={checkInDate}
@@ -399,17 +369,13 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
                           min={new Date().toISOString().split('T')[0]}
                           max={maxDate}
                           className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                          required
                         />
                       </div>
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                        Check-out Date
-                      </label>
+                      <label className="block text-sm font-medium text-charcoal-700 mb-2">Check-out Date</label>
                       <div className="relative">
-                        <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
+                        <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
                         <input
                           type="date"
                           value={checkOutDate}
@@ -417,7 +383,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
                           min={checkInDate || new Date().toISOString().split('T')[0]}
                           max={maxDate}
                           className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                          required
                         />
                       </div>
                     </div>
@@ -425,327 +390,289 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                        Number of Guests
-                      </label>
+                      <label className="block text-sm font-medium text-charcoal-700 mb-2">Guests</label>
                       <div className="flex items-center space-x-4">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newGuests = Math.max(1, guests - 1);
-                            setGuests(newGuests);
-                            // Auto-adjust rooms based on guests
-                            const requiredRooms = Math.ceil(newGuests / room.max_occupancy);
-                            setRooms(Math.max(1, requiredRooms));
-                          }}
-                          className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <div className="flex items-center space-x-2">
-                          <Users size={18} className="text-charcoal-600" />
-                          <span className="text-lg font-medium">{guests}</span>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newGuests = guests + 1;
-                            setGuests(newGuests);
-                            // Auto-adjust rooms based on guests
-                            const requiredRooms = Math.ceil(newGuests / room.max_occupancy);
-                            setRooms(Math.max(1, requiredRooms));
-                          }}
-                          className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"
-                        >
-                          <Plus size={16} />
-                        </button>
+                        <button type="button" onClick={() => { const g = Math.max(1, guests - 1); setGuests(g); setRooms(Math.max(1, Math.ceil(g / room.max_occupancy))); }} className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"><Minus size={16} /></button>
+                        <div className="flex items-center space-x-2"><Users size={18} className="text-charcoal-600" /><span className="text-lg font-medium">{guests}</span></div>
+                        <button type="button" onClick={() => { const g = guests + 1; setGuests(g); setRooms(Math.max(rooms, Math.ceil(g / room.max_occupancy))); }} className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"><Plus size={16} /></button>
                       </div>
                     </div>
-
                     <div>
-                      <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                        Number of Rooms
-                      </label>
+                      <label className="block text-sm font-medium text-charcoal-700 mb-2">Rooms</label>
                       <div className="flex items-center space-x-4">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            const newRooms = Math.max(1, rooms - 1);
-                            setRooms(newRooms);
-                            // Adjust guests if rooms can't accommodate current guest count
-                            const maxGuestsForRooms = newRooms * room.max_occupancy;
-                            if (guests > maxGuestsForRooms) {
-                              setGuests(maxGuestsForRooms);
-                            }
-                          }}
-                          className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"
-                        >
-                          <Minus size={16} />
-                        </button>
-                        <div className="flex items-center space-x-2">
-                          <span className="text-lg font-medium">{rooms}</span>
-                          <span className="text-sm text-charcoal-600">Room{rooms > 1 ? 's' : ''}</span>
-                        </div>
+                        <button type="button" onClick={() => { const r = Math.max(1, rooms - 1); setRooms(r); if (guests > r * room.max_occupancy) setGuests(r * room.max_occupancy); }} className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"><Minus size={16} /></button>
+                        <span className="text-lg font-medium">{rooms}</span>
                         <button
                           type="button"
                           onClick={() => setRooms(rooms + 1)}
-                          className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors"
-                        >
-                          <Plus size={16} />
-                        </button>
+                          disabled={availableRooms !== null && rooms >= availableRooms}
+                          className="p-2 border border-soft-gray rounded-lg hover:bg-muted-beige transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                        ><Plus size={16} /></button>
                       </div>
-                      <div className="text-xs text-charcoal-500 mt-1">
-                        Max {room.max_occupancy} guests per room
-                      </div>
+                      {availabilityLoading ? (
+                        <p className="text-xs text-charcoal-400 mt-1">Checking availability…</p>
+                      ) : availableRooms === null ? (
+                        <p className="text-xs text-charcoal-500 mt-1">Max {room.max_occupancy} guests/room</p>
+                      ) : availableRooms === 0 ? (
+                        <p className="text-xs text-red-500 font-medium mt-1">No rooms available for these dates</p>
+                      ) : (
+                        <p className="text-xs text-green-700 font-medium mt-1">{availableRooms} room{availableRooms !== 1 ? 's' : ''} available</p>
+                      )}
                     </div>
                   </div>
 
-
-
-                  {pricing && (
+                  {checkInDate && checkOutDate && new Date(checkOutDate) > new Date(checkInDate) && (
                     <div className="bg-muted-beige p-4 rounded-lg">
-                      <h4 className="font-semibold text-navy-900 mb-3">Price Breakdown</h4>
-                      <div className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                          <span>{rooms} Room{rooms > 1 ? 's' : ''} ({pricing.nights} nights)</span>
-                          <span>₹{pricing.subtotal.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>GST (18%)</span>
-                          <span>₹{pricing.gst.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>Service Charge</span>
-                          <span>₹{pricing.service_charge.toLocaleString()}</span>
-                        </div>
-                        {pricing.discount_amount > 0 && (
-                          <div className="flex justify-between text-green-600">
-                            <span>Discount</span>
-                            <span>-₹{pricing.discount_amount.toLocaleString()}</span>
+                      <h4 className="font-semibold text-navy-900 mb-3">Estimated Price</h4>
+                      {(() => {
+                        const nights = Math.ceil((new Date(checkOutDate).getTime() - new Date(checkInDate).getTime()) / 86400000);
+                        const subtotal = room.base_price * rooms * nights;
+                        const tax = subtotal * TAX_RATE;
+                        return (
+                          <div className="space-y-1 text-sm">
+                            <div className="flex justify-between"><span>{rooms} room{rooms > 1 ? 's' : ''} × {nights} night{nights > 1 ? 's' : ''}</span><span>₹{subtotal.toLocaleString()}</span></div>
+                            <div className="flex justify-between text-charcoal-600"><span>GST (5%)</span><span>₹{tax.toLocaleString()}</span></div>
+                            <div className="border-t border-soft-gray pt-2 flex justify-between font-semibold text-lg"><span>Total</span><span>₹{(subtotal + tax).toLocaleString()}</span></div>
+                            <p className="text-xs text-charcoal-500">Final amount confirmed at booking</p>
                           </div>
-                        )}
-                        <div className="border-t border-soft-gray pt-2 flex justify-between font-semibold text-lg">
-                          <span>Total</span>
-                          <span>₹{pricing.total_amount.toLocaleString()}</span>
-                        </div>
-                      </div>
+                        );
+                      })()}
                     </div>
                   )}
 
                   <button
                     onClick={calculatePrice}
-                    disabled={loading || !checkInDate || !checkOutDate}
+                    disabled={!checkInDate || !checkOutDate || availableRooms === 0}
                     className="w-full btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {loading ? 'Calculating...' : 'Check Availability & Price'}
+                    Continue to Guest Details
                   </button>
                 </div>
               )}
 
-              {/* Step 2: Guest Details */}
-              {step === 2 && pricing && (
-                <div className="space-y-6">
-                  <div className="bg-muted-beige p-4 rounded-lg">
-                    <h4 className="font-semibold text-navy-900 mb-2">Booking Summary</h4>
-                    <div className="text-sm space-y-1">
-                      <div>Check-in: {new Date(checkInDate).toLocaleDateString()}</div>
-                      <div>Check-out: {new Date(checkOutDate).toLocaleDateString()}</div>
-                      <div>Guests: {guests} | Rooms: {rooms}</div>
-                      <div className="font-semibold">Total: ₹{pricing.total_amount.toLocaleString()}</div>
-                    </div>
+              {/* ── Step 2: Guest Details ── */}
+              {step === 2 && (
+                <div className="space-y-5">
+                  {/* Summary */}
+                  <div className="bg-muted-beige p-4 rounded-lg text-sm space-y-1">
+                    <div className="font-semibold text-navy-900 mb-1">Booking Summary</div>
+                    <div className="flex justify-between"><span>Check-in</span><span>{new Date(checkInDate + 'T12:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
+                    <div className="flex justify-between"><span>Check-out</span><span>{new Date(checkOutDate + 'T12:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span></div>
+                    <div className="flex justify-between"><span>{rooms} room{rooms > 1 ? 's' : ''}, {guests} guest{guests > 1 ? 's' : ''}</span><span className="font-semibold">₹{pricing ? (pricing.total_amount).toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—'}</span></div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                        Full Name *
-                      </label>
-                      <input
-                        type="text"
-                        value={guestDetails.name}
-                        onChange={(e) => setGuestDetails({...guestDetails, name: e.target.value})}
-                        className="w-full px-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        required
-                      />
+                  {/* Book for self toggle */}
+                  <label className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors select-none ${bookForSelf ? 'border-gold-400 bg-gold-50' : 'border-soft-gray hover:bg-muted-beige'}`}>
+                    <div className={`w-10 h-6 rounded-full relative transition-colors ${bookForSelf ? 'bg-gold-500' : 'bg-soft-gray'}`}>
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-transform ${bookForSelf ? 'translate-x-5' : 'translate-x-1'}`} />
+                      <input type="checkbox" className="sr-only" checked={bookForSelf} onChange={(e) => setBookForSelf(e.target.checked)} />
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                        Email *
-                      </label>
-                      <input
-                        type="email"
-                        value={guestDetails.email}
-                        onChange={(e) => setGuestDetails({...guestDetails, email: e.target.value})}
-                        className="w-full px-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                        required
-                      />
+                    <div className="flex items-center gap-2">
+                      <UserCheck size={18} className="text-gold-600" />
+                      <span className="font-medium text-navy-900">Book for myself</span>
                     </div>
-                  </div>
+                    {bookForSelf && user && (
+                      <span className="text-xs text-charcoal-500 ml-auto">{user.full_name || user.email}</span>
+                    )}
+                  </label>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                        Phone Number *
-                      </label>
-                      <div className="flex gap-2">
-                        <CountryCodeDropdown
-                          value={countryCode}
-                          onChange={(newCode) => {
-                            setCountryCode(newCode);
-                            setGuestDetails({...guestDetails, phone: `${newCode}${phoneNumber}`});
-                          }}
-                          className="flex-shrink-0"
-                        />
-                        <div className="relative flex-1">
-                          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-charcoal-600" size={18} />
+                  {bookForSelf ? (
+                    /* Self-booking: show pre-filled read-only fields + phone if missing */
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gold-700 mb-2">Full Name</label>
                           <input
-                            type="tel"
-                            value={phoneNumber}
-                            onChange={(e) => {
-                              const digitsOnly = e.target.value.replace(/\D/g, '');
-                              setPhoneNumber(digitsOnly);
-                              setGuestDetails({...guestDetails, phone: `${countryCode}${digitsOnly}`});
-                            }}
-                            onKeyDown={(e) => {
-                              // Allow backspace, delete, tab, escape, enter, and arrow keys
-                              if ([8, 9, 27, 13, 46, 37, 38, 39, 40].includes(e.keyCode) ||
-                                  // Allow Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-                                  (e.keyCode === 65 && e.ctrlKey) ||
-                                  (e.keyCode === 67 && e.ctrlKey) ||
-                                  (e.keyCode === 86 && e.ctrlKey) ||
-                                  (e.keyCode === 88 && e.ctrlKey)) {
-                                return;
-                              }
-                              // Ensure that it is a number and stop the keypress
-                              if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
-                                e.preventDefault();
-                              }
-                            }}
-                            className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                            placeholder="1234567890"
-                            minLength={7}
-                            maxLength={15}
-                            required
+                            type="text"
+                            value={guestName}
+                            disabled
+                            className="w-full px-4 py-3 border border-gold-400 rounded-lg bg-gold-50 text-navy-900 font-medium cursor-not-allowed"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gold-700 mb-2">Email</label>
+                          <input
+                            type="email"
+                            value={guestEmail}
+                            disabled
+                            className="w-full px-4 py-3 border border-gold-400 rounded-lg bg-gold-50 text-navy-900 font-medium cursor-not-allowed"
                           />
                         </div>
                       </div>
-                      <p className="text-xs text-charcoal-600 mt-1">
-                        Enter digits only (no spaces or special characters)
-                      </p>
+                      <div>
+                        <label className="block text-sm font-medium text-gold-700 mb-2">
+                          Phone Number {!user?.phone && <span className="text-red-500">*</span>}
+                        </label>
+                        {user?.phone ? (
+                          <input
+                            type="text"
+                            value={phoneNumber}
+                            disabled
+                            className="w-full px-4 py-3 border border-gold-400 rounded-lg bg-gold-50 text-navy-900 font-medium cursor-not-allowed"
+                          />
+                        ) : (
+                          <div className="flex gap-2">
+                            <CountryCodeDropdown value={countryCode} onChange={setCountryCode} className="flex-shrink-0" />
+                            <div className="relative flex-1">
+                              <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
+                              <input
+                                type="tel"
+                                value={phoneNumber}
+                                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                                className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                                placeholder="1234567890"
+                                maxLength={10}
+                              />
+                            </div>
+                          </div>
+                        )}
+                        {!user?.phone && (
+                          <p className="text-xs text-charcoal-500 mt-1">Not set in your profile — enter it here</p>
+                        )}
+                      </div>
                     </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                        ID Type *
-                      </label>
-                      <select
-                        value={guestDetails.id_type}
-                        onChange={(e) => setGuestDetails({...guestDetails, id_type: e.target.value})}
-                        className="w-full px-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                      >
-                        <option value="aadhar">Aadhar Card</option>
-                        <option value="passport">Passport</option>
-                        <option value="driving_license">Driving License</option>
-                      </select>
+                  ) : (
+                    /* Guest booking: editable fields */
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-charcoal-700 mb-2">Guest Full Name *</label>
+                          <input
+                            type="text"
+                            value={guestName}
+                            onChange={(e) => setGuestName(e.target.value)}
+                            className="w-full px-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                            placeholder="Full name"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-charcoal-700 mb-2">Guest Email *</label>
+                          <input
+                            type="email"
+                            value={guestEmail}
+                            onChange={(e) => setGuestEmail(e.target.value)}
+                            className="w-full px-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                            placeholder="email@example.com"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-charcoal-700 mb-2">Guest Phone *</label>
+                        <div className="flex gap-2">
+                          <CountryCodeDropdown value={countryCode} onChange={setCountryCode} className="flex-shrink-0" />
+                          <div className="relative flex-1">
+                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-charcoal-600" size={18} />
+                            <input
+                              type="tel"
+                              value={phoneNumber}
+                              onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                              className="w-full pl-10 pr-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
+                              placeholder="1234567890"
+                              maxLength={10}
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div>
-                    <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                      ID Number *
-                    </label>
-                    <input
-                      type="text"
-                      value={guestDetails.id_number}
-                      onChange={(e) => setGuestDetails({...guestDetails, id_number: e.target.value})}
-                      className="w-full px-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                      Special Requests (Optional)
-                    </label>
+                    <label className="block text-sm font-medium text-charcoal-700 mb-2">Special Requests <span className="text-charcoal-400 font-normal">(optional)</span></label>
                     <textarea
                       value={specialRequests}
                       onChange={(e) => setSpecialRequests(e.target.value)}
                       rows={3}
                       className="w-full px-4 py-3 border border-soft-gray rounded-lg focus:ring-2 focus:ring-gold-500 focus:border-transparent"
-                      placeholder="Any special requests or preferences..."
+                      placeholder="Any preferences or requests..."
                     />
                   </div>
 
-                  <div className="flex space-x-4">
-                    <button
-                      onClick={() => setStep(1)}
-                      className="flex-1 btn-outline-gold py-3"
-                    >
-                      Back
-                    </button>
-                    <button
-                      onClick={createHold}
-                      disabled={loading}
-                      className="flex-1 btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {loading ? 'Creating Hold...' : 'Continue to Payment'}
+                  <div className="flex gap-3">
+                    <button onClick={() => setStep(1)} className="flex-1 btn-outline-gold py-3">Back</button>
+                    <button onClick={createHold} disabled={loading} className="flex-1 btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed">
+                      {loading ? 'Creating booking...' : 'Continue to Payment'}
                     </button>
                   </div>
                 </div>
               )}
 
-              {/* Step 3: Payment */}
+              {/* ── Step 3: Payment / Confirmed ── */}
               {step === 3 && (
-                <div className="space-y-6">
-                  <div className="text-center">
-                    <CheckCircle className="mx-auto text-green-600 mb-4" size={48} />
-                    <h3 className="text-xl font-semibold text-navy-900 mb-2">
-                      Booking Hold Created!
-                    </h3>
-                    <p className="text-charcoal-600 mb-4">
-                      Booking Reference: <span className="font-semibold">{bookingReference}</span>
-                    </p>
-                    {timeRemaining > 0 && (
-                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                        <div className="flex items-center justify-center space-x-2 text-yellow-800">
-                          <Clock size={20} />
-                          <span>Complete payment within {formatTime(timeRemaining)}</span>
+                confirmed ? (
+                  /* ── Confirmed view ── */
+                  <div className="flex flex-col items-center text-center py-6 space-y-5">
+                    <div className="w-24 h-24 rounded-full bg-green-50 flex items-center justify-center">
+                      <CheckCircle className="text-green-500" size={56} strokeWidth={1.5} />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-serif font-semibold text-navy-900 mb-1">Booking Confirmed!</h3>
+                      <p className="text-charcoal-600 text-sm">
+                        Reference: <span className="font-mono font-semibold text-navy-900">{bookingReference}</span>
+                      </p>
+                    </div>
+                    {pricing && (
+                      <p className="text-charcoal-600 text-sm">
+                        ₹{pricing.total_amount.toLocaleString(undefined, { maximumFractionDigits: 0 })} paid successfully
+                      </p>
+                    )}
+                    <div className="flex gap-3 w-full pt-2">
+                      <button onClick={handleClose} className="flex-1 btn-outline-gold py-3">Close</button>
+                      <a href="/profile" className="flex-1 btn-gold py-3 text-center">View Bookings</a>
+                    </div>
+                  </div>
+                ) : (
+                  /* ── Awaiting payment view ── */
+                  <div className="space-y-5">
+                    <div className="text-center">
+                      <h3 className="text-xl font-semibold text-navy-900 mb-1">Complete Your Payment</h3>
+                      <p className="text-charcoal-600 text-sm">
+                        Ref: <span className="font-semibold text-navy-900">{bookingReference}</span>
+                      </p>
+                    </div>
+
+                    {pricing && (
+                      <div className="bg-muted-beige p-4 rounded-lg text-center">
+                        <div className="text-sm text-charcoal-600 mb-1">Amount to pay</div>
+                        <div className="text-3xl font-bold text-navy-900">
+                          ₹{pricing.total_amount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                         </div>
+                        <div className="text-xs text-charcoal-500 mt-1">Includes 5% GST</div>
                       </div>
                     )}
+
+                    <button
+                      onClick={openPaymentPage}
+                      disabled={!paymentUrl}
+                      className="w-full btn-gold py-4 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                      <CreditCard size={20} />
+                      Proceed to Payment
+                    </button>
+
+                    <button
+                      onClick={verifyPayment}
+                      disabled={loading}
+                      className="w-full btn-outline-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loading ? 'Verifying...' : "I've paid — Check Status"}
+                    </button>
+
+                    <p className="text-center text-xs text-charcoal-500">
+                      Secure payment via HDFC SmartGateway.{' '}
+                      {timeLeft !== null && timeLeft > 0
+                        ? <>Held for <span className="font-semibold text-gold-600">{formatTime(timeLeft)}</span>.</>
+                        : timeLeft === 0
+                        ? <span className="text-red-500 font-semibold">Hold expired — room may no longer be available.</span>
+                        : 'Your room is held for 30 minutes.'}
+                    </p>
                   </div>
-
-                  {pricing && (
-                    <div className="bg-muted-beige p-4 rounded-lg">
-                      <h4 className="font-semibold text-navy-900 mb-3">Final Amount</h4>
-                      <div className="text-2xl font-bold text-center text-navy-900">
-                        ₹{pricing.total_amount.toLocaleString()}
-                      </div>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={confirmBooking}
-                    disabled={loading}
-                    className="w-full btn-gold py-4 text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                  >
-                    <CreditCard size={20} />
-                    <span>{loading ? 'Processing...' : 'Proceed to Payment'}</span>
-                  </button>
-
-                  <div className="text-center text-sm text-charcoal-600">
-                    <p>Secure payment powered by Razorpay</p>
-                    <p>Your booking will be confirmed after successful payment</p>
-                  </div>
-                </div>
+                )
               )}
             </div>
           </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
-    </>
   );
 };
 
