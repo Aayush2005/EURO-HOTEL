@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle, XCircle, Clock, Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -9,6 +9,18 @@ import { useAuth } from '@/contexts/AuthContext';
 type VerifyState = 'verifying' | 'success' | 'failed' | 'pending' | 'error';
 
 export default function PaymentReturnPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-off-white flex items-center justify-center">
+        <Loader2 className="text-gold-600 animate-spin" size={48} />
+      </div>
+    }>
+      <PaymentStatusContent />
+    </Suspense>
+  );
+}
+
+function PaymentStatusContent() {
   const searchParams = useSearchParams();
   const { authenticatedFetch, isLoading: authLoading } = useAuth();
   const [state, setState] = useState<VerifyState>('verifying');
