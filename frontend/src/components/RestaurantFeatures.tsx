@@ -49,12 +49,12 @@ const RestaurantFeatures = () => {
     {
       title: "Paan Counter",
       description: "Fresh paan and traditional mouth fresheners",
-      image: "https://images.unsplash.com/photo-1626132647523-66f5bf380027?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20-%20Food%20Shots%20Insta-cdn/image.png?updatedAt=1779738107929",
     },
     {
       title: "Take Away Counter",
       description: "Quick service for guests on the go",
-      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20-%20Food%20Shots%20Insta-cdn/image.png?updatedAt=1777053096211",
+      image: "https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20-%20Food%20Shots%20Insta-cdn/Euro%20Hotels%20food%20Insta-3.jpg?updatedAt=1777049047650",
     },
     {
       title: "24×7 Barista",

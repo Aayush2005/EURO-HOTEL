@@ -10,16 +10,16 @@ import { getAboutImage, getHeroImage } from '@/lib/cloudinary-images';
 const AboutPage = () => {
   const aboutSections = [
     {
-      title: "Our Story",
-      content: "Every grand vision begins with a humble dream. For the Director of Euro Buildcon, the dream of owning a hotel took root during his college days while studying Hotel Management. After launching his first small but successful hotel, destiny led him to Hyderabad, where he excelled in the Employee Mobility Services industry. Years later, his dream took new shape — and from that dream, EURO HOTEL was born.",
+      title: "Founder's Story",
+      content: "For Kuldeep Singh, hospitality was never just a profession — it was always personal. After studying hotel management, he opened his first hotel built on sincerity and a belief that great hospitality leaves a lasting impression. Life led him to Hyderabad, where he built businesses in employee mobility and service operations. But through it all, the dream of building a hotel never faded. EURO HOTEL is the return of that dream — shaped by years of experience, genuine care, and a deep understanding of what guests value most.",
       quote: "Some dreams may pause, but they never disappear. They simply wait for the right moment to rise again.",
-      image: getAboutImage('storyHeritage')
+      image: '/Usable1.jpg'
     },
     {
       title: "Our Philosophy",
       content: "At Euro Hotel, hospitality is more than service — it's a promise. We believe that every guest deserves not just comfort, but care; not just luxury, but belonging. Our approach blends timeless warmth with modern sophistication, creating an environment that feels both grand and personal.",
       quote: "Luxury is not about excess — it's about experience.",
-      image: getAboutImage('philosophyService')
+      image: 'https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20Night%20view.JPG?updatedAt=1777049081152'
     },
     {
       title: "Our Vision",

@@ -178,6 +178,7 @@ const EventsPage = () => {
                     className="btn-outline-gold"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
+                    onClick={() => window.location.href = 'tel:+917729900091'}
                   >
                     INQUIRE NOW
                   </motion.button>
@@ -285,6 +286,7 @@ const EventsPage = () => {
                 className="btn-gold mt-12 text-xl px-12 py-4"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                onClick={() => window.location.href = 'tel:+917729900091'}
               >
                 SCHEDULE CONSULTATION
               </motion.button>

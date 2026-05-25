@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 const EventsSection = () => {
   return (
     <section className="py-20 bg-gray-50">
@@ -51,9 +53,9 @@ const EventsSection = () => {
               </div>
             </div> */}
             
-            <button className="btn-outline-gold">
+            <Link href="/events" className="btn-outline-gold inline-block">
               PLAN YOUR EVENT
-            </button>
+            </Link>
           </div>
 
           {/* Visual Gallery */}
