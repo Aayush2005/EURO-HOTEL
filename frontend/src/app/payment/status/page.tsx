@@ -40,7 +40,8 @@ function PaymentStatusContent() {
       setErrorMessage(
         errorParam === 'missing_order' ? 'No order ID received from the payment gateway.' :
         errorParam === 'parse_failed' ? 'Could not read the payment response. Please contact support.' :
-        'No order ID found in the URL.'
+        errorParam === 'invalid_signature' ? 'Payment response could not be verified. Please contact support.' :
+        'Something went wrong processing your payment return.'
       );
       return;
     }
