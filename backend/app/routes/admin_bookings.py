@@ -8,6 +8,7 @@ from asyncpg import Connection
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 
 from app.auth.dependencies import require_roles
+from app.config import settings
 from app.db import get_db
 from app.email import send_cancellation_approved_email
 from app.schemas.booking import AssignRoomRequest, ManualBookingRequest, ReassignRoomRequest
@@ -82,7 +83,7 @@ async def manual_booking(
 ) -> dict:
     user_id = UUID(payload.user_id) if payload.user_id else None
     booking = await BookingEngine.create_booking_with_payment(connection, payload, user_id)
-    backend_return_url = str(request.base_url).rstrip("/") + "/payments/return"
+    backend_return_url = f"{settings.backend_url.rstrip('/')}/payments/return"
     payment = await payment_engine.initiate_payment(connection, int(booking["id"]), return_url=backend_return_url)
     return {"booking": booking, "payment": payment}
 

@@ -10,6 +10,7 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 
 from app.auth.dependencies import get_current_user, get_current_user_optional
+from app.config import settings
 from app.db import get_db
 
 limiter = Limiter(key_func=get_remote_address)
@@ -47,7 +48,7 @@ async def create_booking(
 ) -> BookingCreateResponse:
     user_id = UUID(str(user["id"])) if user else None
     booking = await BookingEngine.create_booking_with_payment(connection, payload, user_id)
-    backend_return_url = str(request.base_url).rstrip("/") + "/payments/return"
+    backend_return_url = f"{settings.backend_url.rstrip('/')}/payments/return"
     payment_payload = await payment_engine.initiate_payment(connection, int(booking["id"]), return_url=backend_return_url)
     return BookingCreateResponse(
         booking_id=int(booking["id"]),

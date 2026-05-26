@@ -28,7 +28,8 @@ async def hdfc_payment_return(
 ):
     """
     HDFC SmartGateway POSTs form data here after payment completes.
-    Verify signature then redirect browser to the frontend status page.
+    Just redirects browser to the frontend status page — actual payment
+    verification happens server-side in /payments/status via HDFC API.
     """
     if not order_id:
         qs = urlencode({"error": "missing_order"})
@@ -37,21 +38,8 @@ async def hdfc_payment_return(
             status_code=303,
         )
 
-    if not signature or not HDFCService.verify_return_signature(order_id, signature):
-        qs = urlencode({"error": "invalid_signature", "order_id": order_id})
-        return RedirectResponse(
-            url=f"{settings.frontend_url.rstrip('/')}/payment/status?{qs}",
-            status_code=303,
-        )
-
-    params: dict = {"order_id": order_id}
-    if signature:
-        params["signature"] = signature
-    if status:
-        params["status"] = status
-
     return RedirectResponse(
-        url=f"{settings.frontend_url.rstrip('/')}/payment/status?{urlencode(params)}",
+        url=f"{settings.frontend_url.rstrip('/')}/payment/status?{urlencode({'order_id': order_id})}",
         status_code=303,
     )
 

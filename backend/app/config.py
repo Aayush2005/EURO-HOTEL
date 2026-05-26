@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     environment: str = Field(default="development", alias="ENVIRONMENT")
     debug: bool = Field(default=False, alias="DEBUG")
     frontend_url: str = Field(default="http://localhost:3000", alias="FRONTEND_URL")
+    backend_url: str = Field(default="http://localhost:8000", alias="BACKEND_URL")
 
     db_pool_min_size: int = Field(default=1, alias="DB_POOL_MIN_SIZE")
     db_pool_max_size: int = Field(default=10, alias="DB_POOL_MAX_SIZE")
