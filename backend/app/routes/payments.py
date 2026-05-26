@@ -3,8 +3,10 @@ from __future__ import annotations
 from urllib.parse import urlencode
 
 from asyncpg import Connection
-from fastapi import APIRouter, Depends, Form, HTTPException, Query
+from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.auth.dependencies import get_current_user
 from app.config import settings
@@ -15,6 +17,7 @@ from app.services.payment_engine import PaymentEngine
 
 router = APIRouter(prefix="/payments", tags=["payments"])
 payment_engine = PaymentEngine()
+limiter = Limiter(key_func=get_remote_address)
 
 
 @router.post("/return", include_in_schema=False)
@@ -34,7 +37,7 @@ async def hdfc_payment_return(
             status_code=303,
         )
 
-    if signature and not HDFCService.verify_return_signature(order_id, signature):
+    if not signature or not HDFCService.verify_return_signature(order_id, signature):
         qs = urlencode({"error": "invalid_signature", "order_id": order_id})
         return RedirectResponse(
             url=f"{settings.frontend_url.rstrip('/')}/payment/status?{qs}",
@@ -63,7 +66,9 @@ async def initiate_payment(
 
 
 @router.get("/status/{order_id}", response_model=PaymentStatusResponse)
+@limiter.limit("30/minute")
 async def payment_status(
+    request: Request,
     order_id: str,
     connection: Connection = Depends(get_db),
     user: dict = Depends(get_current_user),

@@ -57,7 +57,25 @@ class Settings(BaseSettings):
 
     @property
     def allowed_origins(self) -> List[str]:
-        return ["*"]
+        base = self.frontend_url.rstrip("/")
+        origins = [base]
+
+        # Also allow the www <-> apex counterpart so both variants work
+        from urllib.parse import urlparse
+        parsed = urlparse(base)
+        host = parsed.hostname or ""
+        if host.startswith("www."):
+            apex = f"{parsed.scheme}://{host[4:]}"
+            origins.append(apex)
+        elif host and not host.startswith("www."):
+            www = f"{parsed.scheme}://www.{host}"
+            origins.append(www)
+
+        # Allow localhost variants during development
+        if self.environment != "production":
+            origins += ["http://localhost:3000", "http://127.0.0.1:3000"]
+
+        return origins
 
 
 @lru_cache

@@ -6,9 +6,13 @@ from uuid import UUID
 
 from asyncpg import Connection
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
 from app.auth.dependencies import get_current_user, get_current_user_optional
 from app.db import get_db
+
+limiter = Limiter(key_func=get_remote_address)
 from app.schemas.booking import (
     BookingCreateRequest, BookingCreateResponse, BookingDetails,
     BookingSummary, CancellationRequest,
@@ -34,6 +38,7 @@ async def room_type_availability(
 
 
 @router.post("/create", response_model=BookingCreateResponse)
+@limiter.limit("10/minute")
 async def create_booking(
     payload: BookingCreateRequest,
     request: Request,

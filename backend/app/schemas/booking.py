@@ -25,8 +25,8 @@ class BookingCreateRequest(BaseModel):
     total_guests: int = Field(ge=1, le=40)
     check_in: date
     check_out: date
-    special_requests: str | None = None
-    rooms: list[BookingRoomRequest] = Field(min_length=1)
+    special_requests: str | None = Field(default=None, max_length=1000)
+    rooms: list[BookingRoomRequest] = Field(min_length=1, max_length=10)
 
 
 class PaymentInitiateRequest(BaseModel):
@@ -61,7 +61,7 @@ class BookingCreateResponse(BaseModel):
 
 
 class CancellationRequest(BaseModel):
-    reason: str | None = None
+    reason: str | None = Field(default=None, max_length=500)
 
 
 class BookingSummary(BaseModel):

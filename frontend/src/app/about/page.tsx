@@ -13,7 +13,7 @@ const AboutPage = () => {
       title: "Founder's Story",
       content: "For Kuldeep Singh, hospitality was never just a profession — it was always personal. After studying hotel management, he opened his first hotel built on sincerity and a belief that great hospitality leaves a lasting impression. Life led him to Hyderabad, where he built businesses in employee mobility and service operations. But through it all, the dream of building a hotel never faded. EURO HOTEL is the return of that dream — shaped by years of experience, genuine care, and a deep understanding of what guests value most.",
       quote: "Some dreams may pause, but they never disappear. They simply wait for the right moment to rise again.",
-      image: '/Usable1.jpg'
+      image: '/1.jpg'
     },
     {
       title: "Our Philosophy",

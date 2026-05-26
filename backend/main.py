@@ -33,11 +33,15 @@ async def lifespan(app: FastAPI):
     logger.info("Disconnected from database")
 
 
+_is_production = settings.environment == "production"
 app = FastAPI(
     title="Euro Hotel API",
     description="Hotel booking API with Supabase Auth JWT verification",
     version="1.0.0",
     lifespan=lifespan,
+    docs_url=None if _is_production else "/docs",
+    redoc_url=None if _is_production else "/redoc",
+    openapi_url=None if _is_production else "/openapi.json",
 )
 
 limiter = Limiter(key_func=get_remote_address)

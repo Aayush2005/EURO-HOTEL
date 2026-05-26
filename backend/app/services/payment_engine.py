@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import re
 from datetime import UTC, datetime
 from decimal import Decimal
+
+logger = logging.getLogger(__name__)
 
 from asyncpg import Connection
 from fastapi import HTTPException
@@ -122,6 +125,28 @@ class PaymentEngine:
 
     async def _apply_status(self, connection: Connection, order_id: str, status: str, gateway_response: dict) -> None:
         now = datetime.now(UTC)
+
+        # Amount reconciliation: if HDFC reports success, verify the charged amount
+        # matches what we created the order for. Catches gateway bugs or partial captures.
+        if status == "success":
+            raw_amount = gateway_response.get("amount") or gateway_response.get("order_amount")
+            if raw_amount is not None:
+                expected_row = await connection.fetchrow(
+                    "SELECT amount FROM hotel.payments WHERE order_id = $1", order_id
+                )
+                if expected_row:
+                    try:
+                        gateway_amount = Decimal(str(raw_amount))
+                        expected_amount = Decimal(str(expected_row["amount"]))
+                        if gateway_amount != expected_amount:
+                            logger.error(
+                                "PAYMENT AMOUNT MISMATCH order_id=%s expected=%s gateway=%s — treating as failed",
+                                order_id, expected_amount, gateway_amount,
+                            )
+                            status = "failed"
+                    except Exception:
+                        pass  # unparseable amount — let gateway status stand
+
         booking_status = "confirmed" if status == "success" else "payment_failed" if status in {"failed", "expired"} else "pending"
 
         # Pre-serialize to avoid asyncpg jsonb codec type-inference issues with pgbouncer

@@ -27,6 +27,7 @@ function PaymentStatusContent() {
   const [bookingStatus, setBookingStatus] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [retryCount, setRetryCount] = useState(0);
+  const [amount, setAmount] = useState<string | null>(null);
 
   const orderId = searchParams.get('order_id');
   const signature = searchParams.get('signature');
@@ -56,6 +57,9 @@ function PaymentStatusContent() {
 
         const data = await response.json();
         setBookingStatus(data.booking_status);
+        if (data.amount != null) {
+          setAmount(Number(data.amount).toLocaleString('en-IN', { maximumFractionDigits: 0 }));
+        }
 
         // Notify the original booking tab so it auto-confirms without manual click
         if (data.payment_status === 'success' || data.payment_status === 'failed' || data.payment_status === 'expired') {
@@ -104,6 +108,9 @@ function PaymentStatusContent() {
           <>
             <CheckCircle className="mx-auto text-green-600 mb-4" size={56} />
             <h1 className="text-2xl font-serif font-semibold text-navy-900 mb-2">Payment Confirmed!</h1>
+            {amount && (
+              <p className="text-3xl font-bold text-navy-900 mb-1">₹{amount}</p>
+            )}
             <p className="text-charcoal-500 text-sm mb-6">You can close this tab and return to your booking.</p>
             <button onClick={() => window.close()} className="btn-gold px-8 py-3 inline-block">
               Close Tab
