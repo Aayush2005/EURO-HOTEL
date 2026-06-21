@@ -42,12 +42,22 @@ export interface ConversionOptions {
 }
 
 const CONVERSION_ID = process.env.NEXT_PUBLIC_ADS_CONVERSION_ID;
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID;
 
 const LABELS: Record<ConversionEvent, string | undefined> = {
   purchase: process.env.NEXT_PUBLIC_ADS_LABEL_PURCHASE,
   signup: process.env.NEXT_PUBLIC_ADS_LABEL_SIGNUP,
   contact: process.env.NEXT_PUBLIC_ADS_LABEL_CONTACT,
   booking_initiated: process.env.NEXT_PUBLIC_ADS_LABEL_BOOKING,
+};
+
+// GA4 recommended event names, so each action shows up as a clean, countable
+// event in GA4 (independent of Google Ads). Scoped to the GA4 stream via send_to.
+const GA4_EVENT: Record<ConversionEvent, string> = {
+  purchase: "purchase",
+  signup: "sign_up",
+  contact: "generate_lead",
+  booking_initiated: "begin_checkout",
 };
 
 let configured = false;
@@ -72,9 +82,12 @@ export function splitName(full?: string | null): {
 }
 
 /**
- * Fire a Google Ads enhanced conversion. Safe to call anywhere on the client;
- * no-ops on the server, when the Google tag isn't loaded, or when the event
- * isn't configured.
+ * Fire conversion tracking for an action. Sends two things:
+ *  1. A GA4 event (always, if GA is configured) — for clean analytics counts.
+ *  2. A Google Ads enhanced conversion (if the Ads ID + label are configured)
+ *     with hashed first-party data for ad-click attribution.
+ * Safe to call anywhere on the client; no-ops on the server or when the Google
+ * tag isn't loaded.
  */
 export function trackAdsConversion(
   event: ConversionEvent,
@@ -83,14 +96,28 @@ export function trackAdsConversion(
   if (typeof window === "undefined") return;
   const gtag = window.gtag;
   if (typeof gtag !== "function") return; // Google tag not loaded (e.g. blocked)
-  if (!CONVERSION_ID) return; // not configured
+
+  const { user, value, currency = "INR", transactionId } = opts;
+
+  // 1) GA4 event — fires independently of any Google Ads config, scoped to the
+  //    GA4 stream so it doesn't reach the Ads destination.
+  if (GA_ID) {
+    const ga4Params: Record<string, unknown> = { send_to: GA_ID };
+    if (value != null) {
+      ga4Params.value = value;
+      ga4Params.currency = currency;
+    }
+    if (transactionId) ga4Params.transaction_id = transactionId;
+    gtag("event", GA4_EVENT[event], ga4Params);
+  }
+
+  // 2) Google Ads enhanced conversion.
+  if (!CONVERSION_ID) return; // Ads not configured
 
   const label = LABELS[event];
   if (!label) return; // this conversion action not configured yet
 
   ensureConfigured(gtag);
-
-  const { user, value, currency = "INR", transactionId } = opts;
 
   // Enhanced Conversions: provide normalized first-party data; gtag hashes it.
   if (user && (user.email || user.phone || user.firstName || user.lastName)) {
