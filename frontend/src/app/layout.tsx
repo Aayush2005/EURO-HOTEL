@@ -4,6 +4,9 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AuthModalProvider } from "@/contexts/AuthModalContext";
 import { Toaster } from "react-hot-toast";
+import { GoogleAnalytics } from "@next/third-parties/google";
+import ClickTracker from "./click-tracker";
+import MetaPixel from "./meta-pixel";
 
 
 const geistSans = Geist({
@@ -67,6 +70,11 @@ export default function RootLayout({
           />
           </AuthModalProvider>
         </AuthProvider>
+        <ClickTracker />
+        {process.env.NEXT_PUBLIC_GA_ID && (
+          <GoogleAnalytics gaId={process.env.NEXT_PUBLIC_GA_ID} />
+        )}
+        <MetaPixel />
       </body>
     </html>
   );

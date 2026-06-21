@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@next/third-parties": "^16.2.9",
     "@supabase/supabase-js": "^2.105.4",
     "@vercel/speed-insights": "^1.2.0",
     "framer-motion": "^12.23.22",
