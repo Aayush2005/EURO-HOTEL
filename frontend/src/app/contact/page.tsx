@@ -6,6 +6,7 @@ import { Mail, Phone, MapPin, Clock, Send } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CountryCodeDropdown from '@/components/ui/CountryCodeDropdown';
+import { trackAdsConversion, splitName } from '@/lib/ads-conversions';
 
 const ContactPage = () => {
   const [formData, setFormData] = useState({
@@ -31,6 +32,14 @@ const ContactPage = () => {
       // Simulate processing time
       await new Promise(resolve => setTimeout(resolve, 2000));
       
+      // Google Ads enhanced conversion — contact form lead
+      {
+        const { firstName, lastName } = splitName(formData.name);
+        trackAdsConversion('contact', {
+          user: { email: formData.email, phone: formData.phone, firstName, lastName },
+        });
+      }
+
       setMessage('Thank you for your message! We will get back to you within 24 hours.');
       setFormData({ name: '', email: '', phone: '', message: '' });
       setCountryCode('+91');

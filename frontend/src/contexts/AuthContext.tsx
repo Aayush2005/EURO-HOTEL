@@ -3,6 +3,7 @@
 import React, { createContext, ReactNode, useContext, useEffect, useMemo, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { trackAdsConversion } from '@/lib/ads-conversions';
 
 export interface User {
   id: string;
@@ -130,6 +131,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const verifySignupOtp = async (email: string, token: string) => {
     const { error } = await supabase.auth.verifyOtp({ email, token, type: 'signup' });
     if (error) throw new Error(error.message);
+    // Google Ads enhanced conversion — completed sign-up
+    trackAdsConversion('signup', { user: { email } });
   };
 
   const forgotPassword = async (email: string) => {

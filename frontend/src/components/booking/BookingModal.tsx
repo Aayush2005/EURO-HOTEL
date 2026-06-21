@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Calendar, Users, CreditCard,
@@ -9,6 +9,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import CountryCodeDropdown from '@/components/ui/CountryCodeDropdown';
+import { trackAdsConversion, splitName } from '@/lib/ads-conversions';
 
 interface Room {
   room_type_id: number;
@@ -76,6 +77,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
   const [holdExpiresAt, setHoldExpiresAt] = useState<Date | null>(null);
   const [timeLeft, setTimeLeft] = useState<number | null>(null);
   const [confirmed, setConfirmed] = useState(false);
+  const firedPurchase = useRef(false);
 
   // Countdown timer for hold expiry
   useEffect(() => {
@@ -180,6 +182,20 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
 
   const fullPhone = `${countryCode}${phoneNumber}`;
 
+  // Mark the booking confirmed and fire the Google Ads purchase conversion once.
+  const markConfirmed = () => {
+    setConfirmed(true);
+    if (firedPurchase.current) return;
+    firedPurchase.current = true;
+    const { firstName, lastName } = splitName(guestName);
+    trackAdsConversion('purchase', {
+      user: { email: guestEmail, phone: fullPhone, firstName, lastName },
+      value: pricing?.total_amount,
+      currency: 'INR',
+      transactionId: holdToken || undefined,
+    });
+  };
+
   const createHold = async () => {
     if (!guestName.trim()) { toast.error('Guest name is required'); return; }
     if (!guestEmail.trim()) { toast.error('Guest email is required'); return; }
@@ -220,6 +236,16 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
       if (data.hold_expires_at) setHoldExpiresAt(new Date(data.hold_expires_at));
       setStep(3);
       toast.success('Booking created! Proceed to payment.');
+      // Google Ads enhanced conversion — booking initiated (pre-payment)
+      {
+        const { firstName, lastName } = splitName(guestName);
+        trackAdsConversion('booking_initiated', {
+          user: { email: guestEmail, phone: fullPhone, firstName, lastName },
+          value: pricing?.total_amount,
+          currency: 'INR',
+          transactionId: data.payment.order_id,
+        });
+      }
     } catch (error: any) {
       toast.error(error.message || 'Failed to create booking');
     } finally {
@@ -237,7 +263,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
       if (!active) return;
       if (paymentStatus === 'success') {
         active = false;
-        setConfirmed(true);
+        markConfirmed();
       } else if (paymentStatus === 'failed' || paymentStatus === 'expired') {
         active = false;
         toast.error(`Payment ${paymentStatus}. Please try again or contact support.`);
@@ -291,7 +317,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ isOpen, onClose, room }) =>
       }
       const data = await res.json();
       if (data.payment_status === 'success') {
-        setConfirmed(true);
+        markConfirmed();
         return;
       }
       if (data.payment_status === 'failed' || data.payment_status === 'expired') {
