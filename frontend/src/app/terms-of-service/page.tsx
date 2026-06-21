@@ -129,7 +129,7 @@ export default function TermsOfServicePage() {
               <h2 className="font-serif text-xl font-semibold text-navy-900 mb-2">Acceptance of Terms</h2>
               <p className="text-charcoal-600">
                 By completing a reservation or checking in at Euro Hotel, you confirm that you have read, understood, and agreed to all terms and conditions stated above. For queries, please contact us at{' '}
-                <a href="mailto:reservations@eurohotel.in" className="text-gold-600 hover:underline">reservations@eurohotel.in</a>{' '}
+                <a href="mailto:reservation@eurohotel.in" className="text-gold-600 hover:underline">reservation@eurohotel.in</a>{' '}
                 or call{' '}
                 <a href="tel:+917729900091" className="text-gold-600 hover:underline">+91 77299 00091</a>.
               </p>

@@ -133,9 +133,9 @@ const ContactPage = () => {
                   <div>
                     <h3 className="font-medium text-navy-900 mb-1">Address</h3>
                     <p className="text-charcoal-700">
-                      123 Heritage Street<br />
-                      Old City, Hyderabad<br />
-                      Telangana 500002, India
+                      Opp Post Office, Mumbai Highway<br />
+                      Rudraram Village, Patancheru Mandal<br />
+                      Sangareddy Dist, Telangana 502329
                     </p>
                   </div>
                 </div>
@@ -147,8 +147,7 @@ const ContactPage = () => {
                   <div>
                     <h3 className="font-medium text-navy-900 mb-1">Phone</h3>
                     <p className="text-charcoal-700">
-                      +91 40 1234 5678<br />
-                      +91 40 1234 5679
+                      +91 77299 00091
                     </p>
                   </div>
                 </div>
@@ -160,8 +159,7 @@ const ContactPage = () => {
                   <div>
                     <h3 className="font-medium text-navy-900 mb-1">Email</h3>
                     <p className="text-charcoal-700">
-                      reservations@eurohotel.com<br />
-                      concierge@eurohotel.com
+                      reservation@eurohotel.in
                     </p>
                   </div>
                 </div>

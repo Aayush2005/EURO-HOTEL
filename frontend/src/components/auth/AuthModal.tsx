@@ -29,6 +29,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
   const [dialCode, setDialCode] = useState('+91');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [isLoading, setIsLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -47,6 +48,7 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
       setPhoneNumber('');
       setOtp(Array(OTP_LENGTH).fill(''));
       setShowPassword(false);
+      setAcceptedTerms(false);
     }
   }, [isOpen, initialMode]);
 
@@ -79,6 +81,10 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
     e.preventDefault();
     if (!phoneNumber.trim()) {
       toast.error('Phone number is required.');
+      return;
+    }
+    if (!acceptedTerms) {
+      toast.error('Please accept the Privacy Policy and Terms of Service.');
       return;
     }
     setIsLoading(true);
@@ -462,9 +468,41 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, initialMode = 'l
                   </div>
                 </div>
 
+                {/* Consent */}
+                <label className="flex items-start gap-2 text-sm text-charcoal-600">
+                  <input
+                    type="checkbox"
+                    checked={acceptedTerms}
+                    onChange={(e) => setAcceptedTerms(e.target.checked)}
+                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-soft-gray text-gold-600 focus:ring-gold-500"
+                    required
+                  />
+                  <span>
+                    I agree to the{' '}
+                    <a
+                      href="/privacy-policy"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gold-600 hover:underline"
+                    >
+                      Privacy Policy
+                    </a>{' '}
+                    and{' '}
+                    <a
+                      href="/terms-of-service"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gold-600 hover:underline"
+                    >
+                      Terms of Service
+                    </a>
+                    .
+                  </span>
+                </label>
+
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !acceptedTerms}
                   className="w-full btn-gold py-3 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isLoading ? 'Creating account...' : 'Create Account'}

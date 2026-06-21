@@ -63,6 +63,7 @@ export default function PrivacyPolicyPage() {
                 <li><strong>Government Authorities:</strong> As required by Indian law, guest details may be shared with local police or immigration authorities.</li>
                 <li><strong>Payment Processors:</strong> Secure third-party payment gateways to process transactions.</li>
                 <li><strong>Service Providers:</strong> Trusted vendors who assist in operating our website and hotel (e.g., IT services, email providers) under strict confidentiality agreements.</li>
+                <li><strong>Analytics &amp; Advertising Partners:</strong> Aggregated and securely hashed (pseudonymised) data may be shared with Google (Google Analytics and Google Ads) and Meta (Facebook Pixel) to measure website performance, conversions, and the effectiveness of our advertising. See Section 7 for details.</li>
                 <li><strong>Legal Compliance:</strong> When required by a court order, law enforcement, or other legal process.</li>
               </ul>
             </section>
@@ -82,9 +83,21 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">7. Cookies</h2>
-              <p className="text-charcoal-600">
-                Our website may use cookies and similar tracking technologies to enhance your browsing experience, analyse traffic, and personalise content. You can manage cookie preferences through your browser settings. Disabling cookies may affect certain features of the website.
+              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">7. Cookies, Analytics &amp; Advertising</h2>
+              <p className="text-charcoal-600 mb-3">
+                Our website uses cookies and similar technologies to enhance your browsing experience, analyse traffic, and measure the performance of our marketing. Specifically, we use:
+              </p>
+              <ul className="space-y-2 list-disc list-inside text-charcoal-600">
+                <li><strong>Google Analytics (GA4):</strong> to understand how visitors use our website, such as pages viewed, time on site, and general location. This data is aggregated and is not used to identify you personally.</li>
+                <li><strong>Google Ads &amp; Enhanced Conversions:</strong> to measure the effectiveness of our advertising. When you sign up, submit an enquiry, or complete a booking, limited information you provide (such as your email address, phone number, or name) may be irreversibly <strong>hashed</strong> (encrypted using SHA-256) within your browser before being shared with Google to attribute conversions to our ads. Google does not receive this information in a readable form.</li>
+                <li><strong>Meta Pixel (Facebook):</strong> to measure and improve our advertising on Facebook and Instagram.</li>
+              </ul>
+              <p className="text-charcoal-600 mt-3">
+                You can manage cookies through your browser settings, opt out of Google Analytics using the{' '}
+                <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer" className="text-gold-600 hover:underline">Google Analytics Opt-out Browser Add-on</a>, and control personalised advertising through{' '}
+                <a href="https://adssettings.google.com" target="_blank" rel="noopener noreferrer" className="text-gold-600 hover:underline">Google Ad Settings</a>{' '}
+                and your{' '}
+                <a href="https://www.facebook.com/adpreferences" target="_blank" rel="noopener noreferrer" className="text-gold-600 hover:underline">Meta Ad Preferences</a>. Disabling cookies may affect certain features of the website.
               </p>
             </section>
 
@@ -99,7 +112,7 @@ export default function PrivacyPolicyPage() {
                 <li>Lodge a complaint with the relevant data protection authority.</li>
               </ul>
               <p className="text-charcoal-600 mt-3">
-                To exercise any of these rights, please contact us at <a href="mailto:reservations@eurohotel.in" className="text-gold-600 hover:underline">reservations@eurohotel.in</a>.
+                To exercise any of these rights, please contact us at <a href="mailto:reservation@eurohotel.in" className="text-gold-600 hover:underline">reservation@eurohotel.in</a>.
               </p>
             </section>
 
@@ -133,7 +146,7 @@ export default function PrivacyPolicyPage() {
                 <p><strong>Euro Hotel</strong></p>
                 <p>Opp Post Office, Mumbai Highway, Rudraram Village</p>
                 <p>Patancheru Mandal, Sangareddy Dist, Telangana – 502329</p>
-                <p>Email: <a href="mailto:reservations@eurohotel.in" className="text-gold-600 hover:underline">reservations@eurohotel.in</a></p>
+                <p>Email: <a href="mailto:reservation@eurohotel.in" className="text-gold-600 hover:underline">reservation@eurohotel.in</a></p>
                 <p>Phone: <a href="tel:+917729900091" className="text-gold-600 hover:underline">+91 77299 00091</a></p>
               </div>
             </section>
