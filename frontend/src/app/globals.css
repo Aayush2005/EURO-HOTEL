@@ -23,6 +23,25 @@
   --color-charcoal: var(--charcoal-text);
   --color-beige: var(--muted-beige);
   --color-gray: var(--soft-gray);
+
+  /* Brand color scales (mirrors tailwind.config.js, which v4 does not load
+     without an @config directive). Enables text/bg/border-{gold,navy,charcoal}-* . */
+  --color-navy-900: #0B1D3A;
+
+  --color-gold-50: #FDF8EC;
+  --color-gold-100: #F7EDD0;
+  --color-gold-400: #D4B332;
+  --color-gold-500: #D4A843;
+  --color-gold-600: #C9A227;
+  --color-gold-700: #A6841F;
+
+  --color-charcoal-400: #8C8C8C;
+  --color-charcoal-500: #5C5C5C;
+  --color-charcoal-600: #3C3C3C;
+  --color-charcoal-700: #2C2C2C;
+
+  --color-muted-beige: #F0EDE8;
+  --color-soft-gray: #D3D3D3;
 }
 
 body {
@@ -273,4 +292,14 @@ html, body {
 /* Circular progress glow */
 .progress-glow {
   filter: drop-shadow(0 0 8px rgba(201, 162, 39, 0.6));
+}
+
+/* Hide scrollbar while keeping horizontal scroll (e.g. menu card rows) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }

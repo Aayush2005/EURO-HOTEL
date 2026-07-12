@@ -26,12 +26,12 @@ const HistorySection = () => {
             </div>
             
             {/* Floating Info Cards */}
-            <div className="absolute top-8 left-8 bg-white bg-opacity-90 backdrop-blur-sm p-6 rounded-lg max-w-xs">
+            <div className="absolute top-8 left-8 bg-white/90 backdrop-blur-sm p-6 rounded-lg max-w-xs">
               <h3 className="font-serif text-xl font-medium text-navy-900 mb-2">Charminar</h3>
               <p className="text-charcoal-700 text-sm">Built in 1591, the iconic symbol of Hyderabad&apos;s rich heritage</p>
             </div>
             
-            <div className="absolute bottom-8 right-8 bg-white bg-opacity-90 backdrop-blur-sm p-6 rounded-lg max-w-xs">
+            <div className="absolute bottom-8 right-8 bg-white/90 backdrop-blur-sm p-6 rounded-lg max-w-xs">
               <h3 className="font-serif text-xl font-medium text-navy-900 mb-2">Golconda Fort</h3>
               <p className="text-charcoal-700 text-sm">Medieval fortress city, witness to centuries of royal grandeur</p>
             </div>

@@ -1,6 +1,10 @@
 {
   "/api/auth/login/route": "app/api/auth/login/route.js",
-  "/api/bookings/[id]/approve-cancellation/route": "app/api/bookings/[id]/approve-cancellation/route.js",
-  "/api/bookings/route": "app/api/bookings/route.js",
-  "/dashboard/page": "app/dashboard/page.js"
+  "/api/menu/[id]/route": "app/api/menu/[id]/route.js",
+  "/api/menu/reorder/route": "app/api/menu/reorder/route.js",
+  "/api/menu/route": "app/api/menu/route.js",
+  "/api/menu/upload/route": "app/api/menu/upload/route.js",
+  "/dashboard/menu/page": "app/dashboard/menu/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/login/page": "app/login/page.js"
 }

@@ -116,7 +116,7 @@ const HistoryCarousel = () => {
                 transition={{ duration: 0.8, delay: 0.3 }}
                 className="w-full p-6 md:p-8"
               >
-                <div className="bg-white bg-opacity-98 backdrop-blur-md rounded-xl p-6 md:p-8 max-w-xl shadow-2xl border border-white border-opacity-20">
+                <div className="bg-white/98 backdrop-blur-md rounded-xl p-6 md:p-8 max-w-xl shadow-2xl border border-white/20">
                   <div className="flex items-center mb-4">
                     <div className="bg-yellow-500 text-black px-3 py-1 rounded-full text-sm font-medium mr-4">
                       {slides[currentSlide].year}
@@ -144,14 +144,14 @@ const HistoryCarousel = () => {
             {/* Navigation Arrows */}
             <button
               onClick={prevSlide}
-              className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 backdrop-blur-sm hover:bg-opacity-30 text-white p-3 rounded-full transition-all duration-300 group"
+              className="absolute left-6 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white p-3 rounded-full transition-all duration-300 group"
             >
               <ChevronLeft className="w-6 h-6 group-hover:scale-110 transition-transform" />
             </button>
 
             <button
               onClick={nextSlide}
-              className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-20 backdrop-blur-sm hover:bg-opacity-30 text-white p-3 rounded-full transition-all duration-300 group"
+              className="absolute right-6 top-1/2 transform -translate-y-1/2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white p-3 rounded-full transition-all duration-300 group"
             >
               <ChevronRight className="w-6 h-6 group-hover:scale-110 transition-transform" />
             </button>

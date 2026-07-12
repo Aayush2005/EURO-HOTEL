@@ -14,6 +14,8 @@ from app.routes.rooms import router as rooms_router
 from app.routes.bookings import router as bookings_router
 from app.routes.payments import router as payments_router
 from app.routes.admin_bookings import router as admin_bookings_router
+from app.routes.menu import admin_router as admin_menu_router
+from app.routes.menu import router as menu_router
 from app.config import settings
 from app.db import close_db_pool, init_db_pool
 
@@ -61,6 +63,8 @@ app.include_router(rooms_router)
 app.include_router(bookings_router)
 app.include_router(payments_router)
 app.include_router(admin_bookings_router)
+app.include_router(menu_router)
+app.include_router(admin_menu_router)
 
 
 @app.get("/")

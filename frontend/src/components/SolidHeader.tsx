@@ -208,7 +208,7 @@ const SolidHeader = () => {
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            className="md:hidden bg-navy-900/95 backdrop-blur-md border-t border-yellow-400 border-opacity-20 overflow-hidden"
+            className="md:hidden bg-navy-900/95 backdrop-blur-md border-t border-yellow-400/20 overflow-hidden"
             variants={menuVariants}
             initial="closed"
             animate="open"

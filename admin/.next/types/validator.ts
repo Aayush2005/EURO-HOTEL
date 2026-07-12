@@ -47,6 +47,15 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 }
 
 
+// Validate ../../src/app/dashboard/menu/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/dashboard/menu">> = Specific
+  const handler = {} as typeof import("../../src/app/dashboard/menu/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../src/app/dashboard/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/dashboard">> = Specific
@@ -123,6 +132,42 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends RouteHandlerConfig<"/api/bookings">> = Specific
   const handler = {} as typeof import("../../src/app/api/bookings/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/menu/[id]/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/menu/[id]">> = Specific
+  const handler = {} as typeof import("../../src/app/api/menu/[id]/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/menu/reorder/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/menu/reorder">> = Specific
+  const handler = {} as typeof import("../../src/app/api/menu/reorder/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/menu/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/menu">> = Specific
+  const handler = {} as typeof import("../../src/app/api/menu/route.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../src/app/api/menu/upload/route.ts
+{
+  type __IsExpected<Specific extends RouteHandlerConfig<"/api/menu/upload">> = Specific
+  const handler = {} as typeof import("../../src/app/api/menu/upload/route.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

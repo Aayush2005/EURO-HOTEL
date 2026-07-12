@@ -98,7 +98,7 @@ const AboutPage = () => {
                           fill
                           className="object-cover"
                         />
-                        <div className="absolute inset-0 bg-navy-900 bg-opacity-20"></div>
+                        <div className="absolute inset-0 bg-navy-900/20"></div>
                       </div>
                     </div>
                   </div>
@@ -264,7 +264,7 @@ const AboutPage = () => {
                 Every brick, every corner, and every smile at Euro Hotel tells a story — of resilience, passion, and purpose. What began as one man&apos;s dream has evolved into a destination where people from around the world find a home away from home.
               </p>
 
-              <div className="bg-gold-400 bg-opacity-10 backdrop-blur-sm p-8 rounded-lg">
+              <div className="bg-gold-400/10 backdrop-blur-sm p-8 rounded-lg">
                 <p className="font-serif text-xl italic text-gold-400">
                   &quot;Hospitality is not about buildings — it&apos;s about people. At Euro Hotel, you&apos;re not a guest; you&apos;re part of our story.&quot;
                 </p>

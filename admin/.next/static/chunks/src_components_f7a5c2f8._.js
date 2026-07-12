@@ -7,16 +7,20 @@ __turbopack_context__.s([
     ()=>Sidebar
 ]);
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/compiled/react/jsx-dev-runtime.js [app-client] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/dist/client/app-dir/link.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/navigation.js [app-client] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$layout$2d$dashboard$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__LayoutDashboard$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/layout-dashboard.js [app-client] (ecmascript) <export default as LayoutDashboard>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$log$2d$out$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__LogOut$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/log-out.js [app-client] (ecmascript) <export default as LogOut>");
 var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$hotel$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__Hotel$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/hotel.js [app-client] (ecmascript) <export default as Hotel>");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$utensils$2d$crossed$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__UtensilsCrossed$3e$__ = __turbopack_context__.i("[project]/node_modules/lucide-react/dist/esm/icons/utensils-crossed.js [app-client] (ecmascript) <export default as UtensilsCrossed>");
 ;
 var _s = __turbopack_context__.k.signature();
 'use client';
 ;
 ;
-function Sidebar() {
+;
+function Sidebar(param) {
+    let { active = 'bookings' } = param;
     _s();
     const router = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$navigation$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["useRouter"])();
     async function handleSignOut() {
@@ -46,12 +50,12 @@ function Sidebar() {
                                 children: "E"
                             }, void 0, false, {
                                 fileName: "[project]/src/components/Sidebar.tsx",
-                                lineNumber: 23,
+                                lineNumber: 24,
                                 columnNumber: 13
                             }, this)
                         }, void 0, false, {
                             fileName: "[project]/src/components/Sidebar.tsx",
-                            lineNumber: 21,
+                            lineNumber: 22,
                             columnNumber: 11
                         }, this),
                         /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -61,7 +65,7 @@ function Sidebar() {
                                     children: "EURO HOTEL"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/Sidebar.tsx",
-                                    lineNumber: 26,
+                                    lineNumber: 27,
                                     columnNumber: 13
                                 }, this),
                                 /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -69,24 +73,24 @@ function Sidebar() {
                                     children: "Admin Panel"
                                 }, void 0, false, {
                                     fileName: "[project]/src/components/Sidebar.tsx",
-                                    lineNumber: 27,
+                                    lineNumber: 28,
                                     columnNumber: 13
                                 }, this)
                             ]
                         }, void 0, true, {
                             fileName: "[project]/src/components/Sidebar.tsx",
-                            lineNumber: 25,
+                            lineNumber: 26,
                             columnNumber: 11
                         }, this)
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/Sidebar.tsx",
-                    lineNumber: 20,
+                    lineNumber: 21,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/Sidebar.tsx",
-                lineNumber: 19,
+                lineNumber: 20,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("nav", {
@@ -97,7 +101,7 @@ function Sidebar() {
                         children: "Main"
                     }, void 0, false, {
                         fileName: "[project]/src/components/Sidebar.tsx",
-                        lineNumber: 34,
+                        lineNumber: 35,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(NavItem, {
@@ -105,14 +109,31 @@ function Sidebar() {
                             size: 16
                         }, void 0, false, {
                             fileName: "[project]/src/components/Sidebar.tsx",
-                            lineNumber: 35,
+                            lineNumber: 36,
                             columnNumber: 24
                         }, void 0),
                         label: "Bookings",
-                        active: true
+                        href: "/dashboard",
+                        active: active === 'bookings'
                     }, void 0, false, {
                         fileName: "[project]/src/components/Sidebar.tsx",
-                        lineNumber: 35,
+                        lineNumber: 36,
+                        columnNumber: 9
+                    }, this),
+                    /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(NavItem, {
+                        icon: /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$lucide$2d$react$2f$dist$2f$esm$2f$icons$2f$utensils$2d$crossed$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__$3c$export__default__as__UtensilsCrossed$3e$__["UtensilsCrossed"], {
+                            size: 16
+                        }, void 0, false, {
+                            fileName: "[project]/src/components/Sidebar.tsx",
+                            lineNumber: 37,
+                            columnNumber: 24
+                        }, void 0),
+                        label: "Menu",
+                        href: "/dashboard/menu",
+                        active: active === 'menu'
+                    }, void 0, false, {
+                        fileName: "[project]/src/components/Sidebar.tsx",
+                        lineNumber: 37,
                         columnNumber: 9
                     }, this),
                     /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(NavItem, {
@@ -120,20 +141,20 @@ function Sidebar() {
                             size: 16
                         }, void 0, false, {
                             fileName: "[project]/src/components/Sidebar.tsx",
-                            lineNumber: 36,
+                            lineNumber: 38,
                             columnNumber: 24
                         }, void 0),
                         label: "Hotel",
                         disabled: true
                     }, void 0, false, {
                         fileName: "[project]/src/components/Sidebar.tsx",
-                        lineNumber: 36,
+                        lineNumber: 38,
                         columnNumber: 9
                     }, this)
                 ]
             }, void 0, true, {
                 fileName: "[project]/src/components/Sidebar.tsx",
-                lineNumber: 33,
+                lineNumber: 34,
                 columnNumber: 7
             }, this),
             /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
@@ -146,25 +167,25 @@ function Sidebar() {
                             size: 16
                         }, void 0, false, {
                             fileName: "[project]/src/components/Sidebar.tsx",
-                            lineNumber: 45,
+                            lineNumber: 47,
                             columnNumber: 11
                         }, this),
                         "Sign Out"
                     ]
                 }, void 0, true, {
                     fileName: "[project]/src/components/Sidebar.tsx",
-                    lineNumber: 41,
+                    lineNumber: 43,
                     columnNumber: 9
                 }, this)
             }, void 0, false, {
                 fileName: "[project]/src/components/Sidebar.tsx",
-                lineNumber: 40,
+                lineNumber: 42,
                 columnNumber: 7
             }, this)
         ]
     }, void 0, true, {
         fileName: "[project]/src/components/Sidebar.tsx",
-        lineNumber: 15,
+        lineNumber: 16,
         columnNumber: 5
     }, this);
 }
@@ -175,9 +196,9 @@ _s(Sidebar, "fN7XvhJ+p5oE6+Xlo0NJmXpxjC8=", false, function() {
 });
 _c = Sidebar;
 function NavItem(param) {
-    let { icon, label, active, disabled } = param;
-    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
-        className: "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm mb-1 transition-all\n      ".concat(disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer', "\n      ").concat(active ? 'bg-gold-600/15 text-gold-400 font-medium' : 'text-white/60 hover:text-white hover:bg-white/10'),
+    let { icon, label, href, active, disabled } = param;
+    const className = "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm mb-1 transition-all\n    ".concat(disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer', "\n    ").concat(active ? 'bg-gold-600/15 text-gold-400 font-medium' : 'text-white/60 hover:text-white hover:bg-white/10');
+    const content = /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["Fragment"], {
         children: [
             icon,
             label,
@@ -185,14 +206,27 @@ function NavItem(param) {
                 className: "ml-auto w-1.5 h-1.5 rounded-full bg-gold-400"
             }, void 0, false, {
                 fileName: "[project]/src/components/Sidebar.tsx",
-                lineNumber: 67,
+                lineNumber: 71,
                 columnNumber: 18
             }, this)
         ]
-    }, void 0, true, {
+    }, void 0, true);
+    if (disabled || !href) return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])("div", {
+        className: className,
+        children: content
+    }, void 0, false, {
         fileName: "[project]/src/components/Sidebar.tsx",
-        lineNumber: 59,
-        columnNumber: 5
+        lineNumber: 75,
+        columnNumber: 33
+    }, this);
+    return /*#__PURE__*/ (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$compiled$2f$react$2f$jsx$2d$dev$2d$runtime$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["jsxDEV"])(__TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$dist$2f$client$2f$app$2d$dir$2f$link$2e$js__$5b$app$2d$client$5d$__$28$ecmascript$29$__["default"], {
+        href: href,
+        className: className,
+        children: content
+    }, void 0, false, {
+        fileName: "[project]/src/components/Sidebar.tsx",
+        lineNumber: 76,
+        columnNumber: 10
     }, this);
 }
 _c1 = NavItem;

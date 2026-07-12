@@ -51,10 +51,10 @@ const GallerySection = () => {
           <div className="text-sm text-gold-600 uppercase tracking-widest font-medium mb-4">
             VISUAL JOURNEY
           </div>
-          <h2 className="font-serif text-4xl md:text-5xl font-light bg-navy-900 mb-4">
+          <h2 className="font-serif text-4xl md:text-5xl font-light text-navy-900 mb-4">
             Experience <span className="text-gold-600">Luxury</span>
           </h2>
-          <p className="bg-navy-900 text-xl font-light max-w-2xl mx-auto">
+          <p className="text-navy-900 text-xl font-light max-w-2xl mx-auto">
             Every corner tells a story of elegance and grandeur
           </p>
         </motion.div>
@@ -82,7 +82,7 @@ const GallerySection = () => {
                   fill
                   className="object-cover transition-transform duration-500 group-hover:scale-110"
                 />
-                <div className="absolute inset-0 bg-navy-900 bg-opacity-40 group-hover:bg-opacity-20 transition-all duration-300"></div>
+                <div className="absolute inset-0 bg-navy-900/40 group-hover:bg-navy-900/20 transition-all duration-300"></div>
                 <motion.div 
                   className="absolute bottom-4 left-4 text-white"
                   initial={{ opacity: 0, y: 20 }}

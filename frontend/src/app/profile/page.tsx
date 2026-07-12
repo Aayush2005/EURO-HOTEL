@@ -159,7 +159,7 @@ export default function ProfilePage() {
 
               <div className="space-y-6">
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gold-600 bg-opacity-10 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gold-600/10 rounded-full flex items-center justify-center">
                     <Mail className="text-gold-600" size={20} />
                   </div>
                   <div>
@@ -169,7 +169,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gold-600 bg-opacity-10 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gold-600/10 rounded-full flex items-center justify-center">
                     <User className="text-gold-600" size={20} />
                   </div>
                   <div>
@@ -179,7 +179,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gold-600 bg-opacity-10 rounded-full flex items-center justify-center">
+                  <div className="w-12 h-12 bg-gold-600/10 rounded-full flex items-center justify-center">
                     <Calendar className="text-gold-600" size={20} />
                   </div>
                   <div>

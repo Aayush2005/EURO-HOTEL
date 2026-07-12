@@ -13,6 +13,8 @@
 //   NEXT_PUBLIC_ADS_LABEL_SIGNUP
 //   NEXT_PUBLIC_ADS_LABEL_CONTACT
 //   NEXT_PUBLIC_ADS_LABEL_BOOKING
+//   NEXT_PUBLIC_ADS_LABEL_WHATSAPP  -> /whatsapp redirect route
+//   NEXT_PUBLIC_ADS_LABEL_MAPS      -> /maps redirect route
 // Each event silently no-ops until both the conversion ID and its label are set.
 
 declare global {
@@ -25,7 +27,9 @@ export type ConversionEvent =
   | "purchase"
   | "signup"
   | "contact"
-  | "booking_initiated";
+  | "booking_initiated"
+  | "whatsapp_click"
+  | "maps_click";
 
 export interface ConversionUserData {
   email?: string | null;
@@ -49,6 +53,8 @@ const LABELS: Record<ConversionEvent, string | undefined> = {
   signup: process.env.NEXT_PUBLIC_ADS_LABEL_SIGNUP,
   contact: process.env.NEXT_PUBLIC_ADS_LABEL_CONTACT,
   booking_initiated: process.env.NEXT_PUBLIC_ADS_LABEL_BOOKING,
+  whatsapp_click: process.env.NEXT_PUBLIC_ADS_LABEL_WHATSAPP,
+  maps_click: process.env.NEXT_PUBLIC_ADS_LABEL_MAPS,
 };
 
 // GA4 recommended event names, so each action shows up as a clean, countable
@@ -58,6 +64,8 @@ const GA4_EVENT: Record<ConversionEvent, string> = {
   signup: "sign_up",
   contact: "generate_lead",
   booking_initiated: "begin_checkout",
+  whatsapp_click: "generate_lead",
+  maps_click: "find_location",
 };
 
 let configured = false;

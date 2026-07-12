@@ -99,7 +99,7 @@ const Header = () => {
 
         {/* Navigation Links - Desktop */}
         <div className="hidden md:flex items-center space-x-8">
-          {['HOME', 'ROOMS', 'ABOUT', 'EVENTS'].map((item, index) => {
+          {['HOME', 'ROOMS', 'ABOUT', 'DINING', 'EVENTS'].map((item, index) => {
             const isDisabled = item === 'EVENTS' && PAGE_CONFIG.EVENTS_DISABLED;
             
             return (
@@ -265,14 +265,14 @@ const Header = () => {
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
-            className="md:hidden bg-navy-900/95 backdrop-blur-md border-t border-yellow-400 border-opacity-20 overflow-hidden"
+            className="md:hidden bg-navy-900/95 backdrop-blur-md border-t border-yellow-400/20 overflow-hidden"
             variants={menuVariants}
             initial="closed"
             animate="open"
             exit="closed"
           >
             <div className="px-6 py-6 space-y-4">
-              {['HOME', 'ROOMS', 'ABOUT', 'EVENTS'].map((item, index) => {
+              {['HOME', 'ROOMS', 'ABOUT', 'DINING', 'EVENTS'].map((item, index) => {
                 const isDisabled = item === 'EVENTS' && PAGE_CONFIG.EVENTS_DISABLED;
                 
                 return (

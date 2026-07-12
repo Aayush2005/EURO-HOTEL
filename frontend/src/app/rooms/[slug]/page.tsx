@@ -307,13 +307,13 @@ export default function RoomDetailsPage() {
                 <>
                   <button
                     onClick={prevImage}
-                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-all"
                   >
                     <ChevronLeft size={24} />
                   </button>
                   <button
                     onClick={nextImage}
-                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black bg-opacity-50 text-white p-2 rounded-full hover:bg-opacity-70 transition-all"
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 text-white p-2 rounded-full hover:bg-black/70 transition-all"
                   >
                     <ChevronRight size={24} />
                   </button>
@@ -327,7 +327,7 @@ export default function RoomDetailsPage() {
                     <button
                       key={index}
                       onClick={() => goToImage(index)}
-                      className="relative w-12 h-1 bg-white bg-opacity-30 rounded-full overflow-hidden"
+                      className="relative w-12 h-1 bg-white/30 rounded-full overflow-hidden"
                     >
                       <div 
                         className={`absolute left-0 top-0 h-full bg-gold-400 rounded-full transition-all duration-300 ${
@@ -339,7 +339,7 @@ export default function RoomDetailsPage() {
                         }}
                       />
                       {index !== selectedImageIndex && (
-                        <div className="absolute inset-0 bg-white bg-opacity-50 rounded-full" />
+                        <div className="absolute inset-0 bg-white/50 rounded-full" />
                       )}
                     </button>
                   ))}
@@ -534,7 +534,7 @@ export default function RoomDetailsPage() {
 
       {/* Lightbox Modal */}
       {isLightboxOpen && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center">
           <div className="relative max-w-4xl max-h-full p-4">
             <button
               onClick={() => setIsLightboxOpen(false)}

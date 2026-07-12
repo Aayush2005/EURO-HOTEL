@@ -96,7 +96,7 @@ const PhilosophySection = () => {
                     fill
                     className="object-cover"
                   />
-                  <div className="absolute inset-0 bg-navy-900 bg-opacity-20"></div>
+                  <div className="absolute inset-0 bg-navy-900/20"></div>
                   <motion.div
                     className="absolute bottom-4 left-4 text-white"
                     initial={{ opacity: 0, y: 20 }}
@@ -123,7 +123,7 @@ const PhilosophySection = () => {
                     fill
                     className="object-cover"
                   />
-                  <div className="absolute inset-0 bg-navy-900 bg-opacity-20"></div>
+                  <div className="absolute inset-0 bg-navy-900/20"></div>
                   <div className="absolute bottom-2 left-2 text-white">
                     <h4 className="font-serif text-sm">Modern Elegance</h4>
                   </div>
@@ -144,7 +144,7 @@ const PhilosophySection = () => {
                     fill
                     className="object-cover"
                   />
-                  <div className="absolute inset-0 bg-navy-900 bg-opacity-20"></div>
+                  <div className="absolute inset-0 bg-navy-900/20"></div>
                   <div className="absolute bottom-2 left-2 text-white">
                     <h4 className="font-serif text-sm">Timeless Warmth</h4>
                   </div>

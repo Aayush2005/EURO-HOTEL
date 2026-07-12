@@ -6,6 +6,7 @@ import Footer from '@/components/Footer';
 import Image from 'next/image';
 import ComingSoon from '@/components/ComingSoon';
 import { PAGE_CONFIG } from '@/lib/page-config';
+import { trackAdsConversion } from '@/lib/ads-conversions';
 
 const EventsPage = () => {
   // Check if events page is disabled
@@ -19,6 +20,13 @@ const EventsPage = () => {
       />
     );
   }
+
+  // Track an event inquiry (Google Ads "contact" conversion + GA4 generate_lead),
+  // then place the call. No form here, so no enhanced user data is sent.
+  const handleInquire = () => {
+    trackAdsConversion('contact');
+    window.location.href = 'tel:+917729900091';
+  };
 
   const eventSpaces = [
     {
@@ -144,7 +152,7 @@ const EventsPage = () => {
                         fill
                         className="object-cover"
                       />
-                      <div className="absolute inset-0 bg-navy-900 bg-opacity-20"></div>
+                      <div className="absolute inset-0 bg-navy-900/20"></div>
                       <div className="absolute top-4 right-4 bg-gold-600 text-navy-900 px-3 py-1 rounded-full text-sm font-medium">
                       </div>
                     </div>
@@ -178,7 +186,7 @@ const EventsPage = () => {
                     className="btn-outline-gold"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => window.location.href = 'tel:+917729900091'}
+                    onClick={handleInquire}
                   >
                     INQUIRE NOW
                   </motion.button>
@@ -286,7 +294,7 @@ const EventsPage = () => {
                 className="btn-gold mt-12 text-xl px-12 py-4"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                onClick={() => window.location.href = 'tel:+917729900091'}
+                onClick={handleInquire}
               >
                 SCHEDULE CONSULTATION
               </motion.button>

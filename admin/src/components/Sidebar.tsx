@@ -1,9 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LayoutDashboard, LogOut, Hotel } from 'lucide-react';
+import { LayoutDashboard, LogOut, Hotel, UtensilsCrossed } from 'lucide-react';
 
-export default function Sidebar() {
+export default function Sidebar({ active = 'bookings' }: { active?: 'bookings' | 'menu' }) {
   const router = useRouter();
 
   async function handleSignOut() {
@@ -32,7 +33,8 @@ export default function Sidebar() {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4">
         <div className="text-white/30 text-xs font-semibold tracking-widest px-3 mb-3 uppercase">Main</div>
-        <NavItem icon={<LayoutDashboard size={16} />} label="Bookings" active />
+        <NavItem icon={<LayoutDashboard size={16} />} label="Bookings" href="/dashboard" active={active === 'bookings'} />
+        <NavItem icon={<UtensilsCrossed size={16} />} label="Menu" href="/dashboard/menu" active={active === 'menu'} />
         <NavItem icon={<Hotel size={16} />} label="Hotel" disabled />
       </nav>
 
@@ -51,20 +53,25 @@ export default function Sidebar() {
 }
 
 function NavItem({
-  icon, label, active, disabled,
+  icon, label, href, active, disabled,
 }: {
-  icon: React.ReactNode; label: string; active?: boolean; disabled?: boolean;
+  icon: React.ReactNode; label: string; href?: string; active?: boolean; disabled?: boolean;
 }) {
-  return (
-    <div className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm mb-1 transition-all
-      ${disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
-      ${active
-        ? 'bg-gold-600/15 text-gold-400 font-medium'
-        : 'text-white/60 hover:text-white hover:bg-white/10'
-      }`}>
+  const className = `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm mb-1 transition-all
+    ${disabled ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer'}
+    ${active
+      ? 'bg-gold-600/15 text-gold-400 font-medium'
+      : 'text-white/60 hover:text-white hover:bg-white/10'
+    }`;
+
+  const content = (
+    <>
       {icon}
       {label}
       {active && <span className="ml-auto w-1.5 h-1.5 rounded-full bg-gold-400" />}
-    </div>
+    </>
   );
+
+  if (disabled || !href) return <div className={className}>{content}</div>;
+  return <Link href={href} className={className}>{content}</Link>;
 }

@@ -68,7 +68,7 @@ const EventsSection = () => {
                   backgroundImage: "url('https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-3.jpg?updatedAt=1777049081345')"
                 }}
               >
-                <div className="absolute inset-0 bg-navy-900 bg-opacity-30"></div>
+                <div className="absolute inset-0 bg-navy-900/30"></div>
                 <div className="absolute bottom-4 left-4 text-white">
                   <h3 className="font-serif text-xl font-medium">Grand Ballroom</h3>
                   <p className="text-sm opacity-90">Capacity: 500 guests</p>
@@ -84,7 +84,7 @@ const EventsSection = () => {
                   backgroundImage: "url('https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-13.jpg?updatedAt=1777049081345')"
                 }}
               >
-                <div className="absolute inset-0 bg-navy-900 bg-opacity-30"></div>
+                <div className="absolute inset-0 bg-navy-900/30"></div>
                 <div className="absolute bottom-2 left-2 text-white">
                   <h4 className="font-serif text-sm">Executive Boardroom</h4>
                 </div>
@@ -99,7 +99,7 @@ const EventsSection = () => {
                   backgroundImage: "url('https://ik.imagekit.io/ufqbqa4l9/Euro%20Hotels%20Interiors-cdn/Euro%20Hotels%20-18.jpg?updatedAt=1777049081250')"
                 }}
               >
-                <div className="absolute inset-0 bg-navy-900 bg-opacity-30"></div>
+                <div className="absolute inset-0 bg-navy-900/30"></div>
                 <div className="absolute bottom-2 left-2 text-white">
                   <h4 className="font-serif text-sm">Garden Terrace</h4>
                 </div>

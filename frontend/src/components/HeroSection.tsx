@@ -180,7 +180,7 @@ const HeroSection = () => {
 
       {/* Luxury Badge */}
       {/* <motion.div
-        className="absolute top-8 right-8 bg-white bg-opacity-10 backdrop-blur-sm rounded-full p-4 hidden lg:block"
+        className="absolute top-8 right-8 bg-white/10 backdrop-blur-sm rounded-full p-4 hidden lg:block"
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
         transition={{ duration: 0.8, delay: 1.8 }}
