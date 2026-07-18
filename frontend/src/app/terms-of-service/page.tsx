@@ -1,5 +1,6 @@
 import SolidHeader from '@/components/SolidHeader';
 import Footer from '@/components/Footer';
+import PolicyNav from '@/components/PolicyNav';
 
 export const metadata = {
   title: 'Terms of Service | Euro Hotel',
@@ -129,7 +130,7 @@ export default function TermsOfServicePage() {
               <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">11. Damage & Loss</h2>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
                 <li>Guests will be held liable for any damage caused to hotel property, furniture, fixtures, or equipment during their stay.</li>
-                <li>The cost of repair or replacement will be charged to the guest's account.</li>
+                <li>The cost of repair or replacement will be charged to the guest&apos;s account.</li>
                 <li>Lost key cards, remote controls, or other hotel equipment may attract replacement charges.</li>
               </ul>
             </section>
@@ -152,6 +153,8 @@ export default function TermsOfServicePage() {
             </section>
 
           </div>
+
+          <PolicyNav current="/terms-of-service" />
         </div>
       </main>
       <Footer />

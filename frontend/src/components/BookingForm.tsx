@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { resolveRoomCardImage } from '@/lib/room-images';
 
@@ -251,7 +252,12 @@ const BookingFormContent = () => {
               <div className="grid md:grid-cols-3 gap-6 text-center">
                 <div>
                   <div className="text-gold-600 font-semibold">Free Cancellation</div>
-                  <div className="text-sm text-charcoal-600">Up to 48 hours before check-in</div>
+                  <div className="text-sm text-charcoal-600">
+                    Up to 48 hours before check-in on standard rates.{' '}
+                    <Link href="/cancellation-policy" className="text-gold-600 hover:underline">
+                      View policy
+                    </Link>
+                  </div>
                 </div>
                 <div>
                   <div className="text-gold-600 font-semibold">Best Price Guarantee</div>

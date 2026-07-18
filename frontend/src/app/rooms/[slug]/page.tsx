@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
   Users, Wifi, Car, Coffee, Tv, Bath, 
@@ -160,19 +161,6 @@ export default function RoomDetailsPage() {
     if (amenityLower.includes('bed')) return <Bed size={20} />;
     if (amenityLower.includes('parking') || amenityLower.includes('car')) return <Car size={20} />;
     return <CheckCircle size={20} />;
-  };
-
-  const getCancellationPolicyText = (policy: string) => {
-    switch (policy) {
-      case 'free_24h':
-        return 'Free cancellation up to 48 hours before check-in';
-      case 'flexible':
-        return 'Flexible cancellation with partial refund';
-      case 'non_refundable':
-        return 'Non-refundable booking';
-      default:
-        return 'Standard cancellation policy applies';
-    }
   };
 
   const nextImage = useCallback(() => {
@@ -402,7 +390,12 @@ export default function RoomDetailsPage() {
                   </div>
                   <div className="flex items-center space-x-3 text-charcoal-700">
                     <Shield className="text-gold-600" size={18} />
-                    <span>Free cancellation up to 48 hours before check-in</span>
+                    <span>
+                      Free cancellation up to 48 hours before check-in on standard rates.{' '}
+                      <Link href="/cancellation-policy" className="text-gold-600 hover:underline">
+                        Cancellation &amp; refund policy
+                      </Link>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -441,7 +434,13 @@ export default function RoomDetailsPage() {
                 </button>
 
                 <div className="text-center text-sm text-charcoal-600 mb-4">
-                  Free cancellation • No booking fees
+                  Free cancellation on standard rates • No booking fees
+                  <div className="text-xs text-charcoal-500 mt-1">
+                    Promotional and non-refundable rates cannot be cancelled.{' '}
+                    <Link href="/cancellation-policy" className="text-gold-600 hover:underline">
+                      View policy
+                    </Link>
+                  </div>
                 </div>
 
                 <div className="border-t border-muted-beige pt-4">

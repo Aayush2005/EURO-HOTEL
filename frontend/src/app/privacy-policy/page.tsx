@@ -1,5 +1,6 @@
 import SolidHeader from '@/components/SolidHeader';
 import Footer from '@/components/Footer';
+import PolicyNav from '@/components/PolicyNav';
 
 export const metadata = {
   title: 'Privacy Policy | Euro Hotel',
@@ -124,7 +125,7 @@ export default function PrivacyPolicyPage() {
             </section>
 
             <section>
-              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">10. Children's Privacy</h2>
+              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">10. Children&apos;s Privacy</h2>
               <p className="text-charcoal-600">
                 Our services are not directed to children under the age of 18 without parental or guardian consent. We do not knowingly collect personal information from minors independently.
               </p>
@@ -152,6 +153,8 @@ export default function PrivacyPolicyPage() {
             </section>
 
           </div>
+
+          <PolicyNav current="/privacy-policy" />
         </div>
       </main>
       <Footer />
