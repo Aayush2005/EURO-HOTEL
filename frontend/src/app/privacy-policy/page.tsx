@@ -13,7 +13,7 @@ export default function PrivacyPolicyPage() {
       <main className="pt-28 pb-20">
         <div className="container mx-auto px-6 max-w-4xl">
           <h1 className="font-serif text-4xl font-semibold text-navy-900 mb-2">Privacy Policy</h1>
-          <p className="text-charcoal-500 text-sm mb-10">Effective Date: January 1, 2025</p>
+          <p className="text-charcoal-500 text-sm mb-10">Effective Date: July 18, 2026</p>
 
           <div className="prose prose-lg max-w-none text-charcoal-700 space-y-10">
 
@@ -25,12 +25,12 @@ export default function PrivacyPolicyPage() {
               <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">1. Information We Collect</h2>
               <p className="text-charcoal-600 mb-3">We collect the following types of personal information:</p>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
-                <li><strong>Identity Information:</strong> Full name, date of birth, nationality, government-issued ID number.</li>
-                <li><strong>Contact Information:</strong> Email address, phone number, postal address.</li>
-                <li><strong>Reservation Details:</strong> Check-in/check-out dates, room preferences, special requests, number of guests.</li>
-                <li><strong>Payment Information:</strong> Billing details, transaction references (we do not store full card numbers).</li>
-                <li><strong>Usage Data:</strong> IP address, browser type, pages visited, and time spent on our website.</li>
-                <li><strong>CCTV Footage:</strong> Video surveillance data recorded in public areas of the hotel for security purposes.</li>
+                <li><strong>Account Information:</strong> Name, email address, phone number, and a password (stored only in encrypted form by our authentication provider) if you create an account.</li>
+                <li><strong>Reservation Details:</strong> Guest name, email address, phone number, check-in and check-out dates, number of guests, rooms selected, and any special requests or cancellation reason you provide.</li>
+                <li><strong>Payment Information:</strong> Order reference, amount, payment status and the transaction reference returned by our payment gateway. Card details are entered on the gateway&apos;s own secure page — <strong>we never receive or store your card number, CVV, or UPI PIN</strong>.</li>
+                <li><strong>Enquiries:</strong> Name, email, phone and message when you use our contact or table-reservation forms.</li>
+                <li><strong>Usage Data:</strong> IP address, browser type, pages viewed and links clicked on our website, collected through analytics cookies.</li>
+                <li><strong>At the Hotel:</strong> A valid government-issued photo ID is verified at check-in as required by law, and CCTV operates in public areas for security. This is collected at the property, not through this website.</li>
               </ul>
             </section>
 
@@ -44,8 +44,8 @@ export default function PrivacyPolicyPage() {
                 <li>Communicate important information about your booking, including confirmations and updates.</li>
                 <li>Provide customer support and respond to your queries or complaints.</li>
                 <li>Comply with legal obligations, including reporting to government authorities as mandated by law.</li>
+                <li>Process cancellation requests and refunds.</li>
                 <li>Improve our services, website, and overall guest experience.</li>
-                <li>Send promotional offers and newsletters where you have given consent.</li>
               </ul>
             </section>
 
@@ -61,8 +61,8 @@ export default function PrivacyPolicyPage() {
               <p className="text-charcoal-600 mb-3">We do not sell your personal information. We may share it with:</p>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
                 <li><strong>Government Authorities:</strong> As required by Indian law, guest details may be shared with local police or immigration authorities.</li>
-                <li><strong>Payment Processors:</strong> Secure third-party payment gateways to process transactions.</li>
-                <li><strong>Service Providers:</strong> Trusted vendors who assist in operating our website and hotel (e.g., IT services, email providers) under strict confidentiality agreements.</li>
+                <li><strong>Payment Gateway:</strong> HDFC Bank&apos;s payment gateway, which receives your name, email, phone and booking amount in order to process the transaction on its own secure page.</li>
+                <li><strong>Service Providers:</strong> Trusted vendors who help us run this website and communicate with you — our cloud hosting and authentication provider (Supabase) and our email provider — under confidentiality obligations.</li>
                 <li><strong>Analytics &amp; Advertising Partners:</strong> Aggregated and securely hashed (pseudonymised) data may be shared with Google (Google Analytics and Google Ads) and Meta (Facebook Pixel) to measure website performance, conversions, and the effectiveness of our advertising. See Section 7 for details.</li>
                 <li><strong>Legal Compliance:</strong> When required by a court order, law enforcement, or other legal process.</li>
               </ul>
@@ -71,7 +71,7 @@ export default function PrivacyPolicyPage() {
             <section>
               <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">5. Data Retention</h2>
               <p className="text-charcoal-600">
-                We retain your personal information for as long as necessary to fulfil the purposes outlined in this policy, or as required by law. Reservation records are typically retained for a minimum of 3 years. CCTV footage is retained for up to 30 days unless required for an ongoing investigation.
+                We retain your personal information for as long as necessary to fulfil the purposes outlined in this policy, or as required by law. Reservation and payment records are typically retained for a minimum of 3 years to meet tax and accounting requirements. CCTV footage is retained for up to 30 days unless required for an ongoing investigation. You may ask us to delete your account at any time; bookings already completed will be retained as required by law.
               </p>
             </section>
 
@@ -88,7 +88,7 @@ export default function PrivacyPolicyPage() {
                 Our website uses cookies and similar technologies to enhance your browsing experience, analyse traffic, and measure the performance of our marketing. Specifically, we use:
               </p>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
-                <li><strong>Google Analytics (GA4):</strong> to understand how visitors use our website, such as pages viewed, time on site, and general location. This data is aggregated and is not used to identify you personally.</li>
+                <li><strong>Google Analytics (GA4):</strong> to understand how visitors use our website — pages viewed, time on site, general location, and which buttons and links are clicked. This data is aggregated and is not used to identify you personally.</li>
                 <li><strong>Google Ads &amp; Enhanced Conversions:</strong> to measure the effectiveness of our advertising. When you sign up, submit an enquiry, or complete a booking, limited information you provide (such as your email address, phone number, or name) may be irreversibly <strong>hashed</strong> (encrypted using SHA-256) within your browser before being shared with Google to attribute conversions to our ads. Google does not receive this information in a readable form.</li>
                 <li><strong>Meta Pixel (Facebook):</strong> to measure and improve our advertising on Facebook and Instagram.</li>
               </ul>

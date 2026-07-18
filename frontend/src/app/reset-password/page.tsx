@@ -22,12 +22,21 @@ function ResetPasswordForm() {
 
   useEffect(() => {
     const code = searchParams.get('code');
+    const tokenHash = searchParams.get('token_hash');
+    const expired = 'This reset link is invalid or has expired. Please request a new one.';
 
-    if (code) {
+    if (tokenHash) {
+      // Token-hash flow — the email links straight to eurohotel.in (no supabase.co
+      // hop), so the link domain matches the sender and doesn't look like phishing.
+      // We redeem the token here instead.
+      supabase.auth
+        .verifyOtp({ token_hash: tokenHash, type: 'recovery' })
+        .then(({ error }) => (error ? setError(expired) : setIsReady(true)));
+    } else if (code) {
       // PKCE flow — exchange the code for a session
       supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
         if (error) {
-          setError('This reset link is invalid or has expired. Please request a new one.');
+          setError(expired);
         } else {
           setIsReady(true);
         }

@@ -13,7 +13,7 @@ export default function TermsOfServicePage() {
       <main className="pt-28 pb-20">
         <div className="container mx-auto px-6 max-w-4xl">
           <h1 className="font-serif text-4xl font-semibold text-navy-900 mb-2">Terms of Service</h1>
-          <p className="text-charcoal-500 text-sm mb-10">Effective Date: January 1, 2025</p>
+          <p className="text-charcoal-500 text-sm mb-10">Effective Date: July 18, 2026</p>
 
           <div className="prose prose-lg max-w-none text-charcoal-700 space-y-10">
 
@@ -44,16 +44,32 @@ export default function TermsOfServicePage() {
             <section>
               <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">3. Reservations & Cancellations</h2>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
-                <li>Reservations are confirmed only upon receipt of payment or a valid payment guarantee.</li>
-                <li>Free cancellation is available up to <strong>48 hours</strong> prior to the scheduled check-in date.</li>
-                <li>Cancellations made within 48 hours of check-in may be subject to a one-night retention charge.</li>
-                <li>No-show reservations will be charged one night's room rate unless otherwise stated at the time of booking.</li>
-                <li>The hotel reserves the right to cancel a reservation in exceptional circumstances, including force majeure events.</li>
+                <li>Reservations are confirmed only upon receipt of the applicable advance payment or a valid payment guarantee. A confirmation is sent by email or SMS once the booking is confirmed.</li>
+                <li>Free cancellation is available up to <strong>48 hours</strong> prior to the scheduled check-in date and time.</li>
+                <li>Cancellations made within 48 hours of check-in incur a charge equivalent to one night&apos;s room tariff.</li>
+                <li>In the event of a no-show, the first night&apos;s room charges are retained and the remaining booking may be cancelled at the hotel&apos;s discretion.</li>
+                <li>Bookings made under promotional, discounted, advance-purchase, or non-refundable rates <strong>cannot be cancelled, modified, or refunded</strong>.</li>
+                <li>Changes to booking dates or room category are subject to availability and prevailing rates; rate differences may apply. Changes requested within 48 hours of arrival may be treated as cancellations.</li>
+                <li>Guests checking out before the confirmed departure date may be charged an early departure fee equivalent to one night&apos;s room tariff, unless otherwise agreed by hotel management.</li>
+                <li>Group reservations of 5 rooms or more and banquet/event bookings are governed by the separate terms in the booking agreement; advance payments for such bookings may be non-refundable.</li>
+                <li>Cancellation requests are valid only once confirmed in writing by Euro Hotel.</li>
               </ul>
             </section>
 
             <section>
-              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">4. Payment Policy</h2>
+              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">4. Refunds</h2>
+              <ul className="space-y-2 list-disc list-inside text-charcoal-600">
+                <li>Eligible refunds are processed to the original mode of payment.</li>
+                <li>Refunds are generally processed within <strong>7–10 business days</strong>, subject to banking and payment gateway timelines.</li>
+                <li>Applicable transaction charges or payment gateway fees may be deducted where relevant.</li>
+                <li>Bookings made through online travel agencies (MakeMyTrip, Goibibo, Booking.com, Agoda and similar) are refunded as per that platform&apos;s policy — please raise the request with them directly.</li>
+                <li>Euro Hotel may cancel or refuse a reservation in cases of incorrect or fraudulent booking information, payment failure, overbooking, force majeure, or violation of hotel policies. Where applicable, the amount received is refunded in full.</li>
+                <li>Euro Hotel is not responsible for cancellations or service interruptions caused by circumstances beyond its reasonable control, including natural disasters, government restrictions, pandemics, civil disturbances, or power and utility failures. In such cases the hotel may offer alternative dates or a refund at its discretion.</li>
+              </ul>
+            </section>
+
+            <section>
+              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">5. Payment Policy</h2>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
                 <li>Payments are accepted via cash, credit/debit card, UPI, and other approved digital payment methods.</li>
                 <li>Full or partial advance payment may be required at the time of booking or check-in.</li>
@@ -63,7 +79,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">5. Guest Conduct</h2>
+              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">6. Guest Conduct</h2>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
                 <li>Guests are expected to maintain decorum and show respect toward other guests, hotel staff, and hotel property at all times.</li>
                 <li>Loud noise, disruptive behaviour, or any activity that disturbs other guests is strictly prohibited.</li>
@@ -74,7 +90,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">6. Children & Extra Beds</h2>
+              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">7. Children & Extra Beds</h2>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
                 <li>Children below 6 years of age may stay complimentary when sharing existing bedding with parents.</li>
                 <li>Children above 6 years are considered adults for room occupancy purposes.</li>
@@ -83,7 +99,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">7. Smoking & Alcohol</h2>
+              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">8. Smoking & Alcohol</h2>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
                 <li>Euro Hotel is a designated non-smoking property. Smoking is permitted only in designated outdoor areas.</li>
                 <li>Guests found smoking in non-designated areas, including guest rooms, will be charged a deep-cleaning fee.</li>
@@ -92,7 +108,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">8. Pet Policy</h2>
+              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">9. Pet Policy</h2>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
                 <li>Pets are not permitted on hotel premises unless expressly agreed upon at the time of booking.</li>
                 <li>Guests are fully responsible for any damage caused by their pets and will be charged accordingly.</li>
@@ -100,7 +116,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">9. Safety & Security</h2>
+              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">10. Safety & Security</h2>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
                 <li>Guests must comply with all hotel safety instructions and emergency evacuation procedures.</li>
                 <li>CCTV surveillance is operational in all public areas of the hotel for the safety and security of all guests.</li>
@@ -110,7 +126,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">10. Damage & Loss</h2>
+              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">11. Damage & Loss</h2>
               <ul className="space-y-2 list-disc list-inside text-charcoal-600">
                 <li>Guests will be held liable for any damage caused to hotel property, furniture, fixtures, or equipment during their stay.</li>
                 <li>The cost of repair or replacement will be charged to the guest's account.</li>
@@ -119,7 +135,7 @@ export default function TermsOfServicePage() {
             </section>
 
             <section>
-              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">11. Amendments</h2>
+              <h2 className="font-serif text-2xl font-semibold text-navy-900 mb-4">12. Amendments</h2>
               <p className="text-charcoal-600">
                 Euro Hotel reserves the right to amend, update, or revise these terms and conditions at any time without prior notice. The most current version will always be available at the front desk and on our website. Continued use of hotel services constitutes acceptance of any revised terms.
               </p>

@@ -224,7 +224,7 @@ async def send_cancellation_approved_email(
                     <p style="margin: 0 0 8px; font-size: 22px;">💳</p>
                     <p style="margin: 0 0 6px; font-weight: 700; color: #065F46; font-size: 16px;">Refund in Progress</p>
                     <p style="margin: 0; color: #3C3C3C; font-size: 14px; line-height: 1.6;">
-                        You will receive your refund within <strong>48 hours</strong> to your original payment method.
+                        Your refund will be processed to your original payment method within <strong>7&ndash;10 business days</strong>, subject to banking and payment gateway timelines.
                     </p>
                 </div>
 
