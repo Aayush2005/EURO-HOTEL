@@ -11,6 +11,8 @@ const formatDate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${p
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 const ReserveTable = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -42,16 +44,25 @@ const ReserveTable = () => {
     setMessage('');
 
     try {
-      const time =
-        formData.timeHour && formData.timeMeridiem
-          ? `${formData.timeHour}:${formData.timeMinute || '00'} ${formData.timeMeridiem}`
-          : '';
+      // Backend wants 24-hour HH:MM.
+      let hour = Number(formData.timeHour) % 12;
+      if (formData.timeMeridiem === 'PM') hour += 12;
+      const reserveTime = `${pad(hour)}:${pad(Number(formData.timeMinute) || 0)}`;
 
-      // Log reservation data for future FastAPI / Supabase integration.
-      console.log('Dining Reservation Data:', { ...formData, time });
-
-      // Simulate processing time.
-      await new Promise((resolve) => setTimeout(resolve, 1500));
+      const response = await fetch(`${API_URL}/reservations/table`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          guests: Number(formData.guests),
+          reserve_date: formData.date,
+          reserve_time: reserveTime,
+          special_requests: formData.specialRequests || null,
+        }),
+      });
+      if (!response.ok) throw new Error(`Reservation failed: ${response.status}`);
 
       // Google Ads enhanced conversion — reservation lead.
       const { firstName, lastName } = splitName(formData.name);
@@ -185,7 +196,7 @@ const ReserveTable = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                  Total Guests {optionalLabel}
+                  Total Guests
                 </label>
                 <input
                   type="text"
@@ -193,6 +204,7 @@ const ReserveTable = () => {
                   name="guests"
                   value={formData.guests}
                   onChange={handleChange}
+                  required
                   className={inputClass}
                   placeholder="e.g. 4"
                 />
@@ -202,13 +214,14 @@ const ReserveTable = () => {
             <div className="grid md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                  Date {optionalLabel}
+                  Date
                 </label>
                 <input
                   type="date"
                   name="date"
                   value={formData.date}
                   onChange={handleChange}
+                  required
                   min={minDate}
                   max={maxDate}
                   className={inputClass}
@@ -216,13 +229,14 @@ const ReserveTable = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-charcoal-700 mb-2">
-                  Preferred Time {optionalLabel}
+                  Preferred Time
                 </label>
                 <div className="grid grid-cols-3 gap-2">
                   <select
                     name="timeHour"
                     value={formData.timeHour}
                     onChange={handleChange}
+                    required
                     aria-label="Hour"
                     className={`${inputClass} bg-white px-2`}
                   >
@@ -237,6 +251,7 @@ const ReserveTable = () => {
                     name="timeMinute"
                     value={formData.timeMinute}
                     onChange={handleChange}
+                    required
                     aria-label="Minutes"
                     className={`${inputClass} bg-white px-2`}
                   >
@@ -248,6 +263,7 @@ const ReserveTable = () => {
                     name="timeMeridiem"
                     value={formData.timeMeridiem}
                     onChange={handleChange}
+                    required
                     aria-label="AM or PM"
                     className={`${inputClass} bg-white px-2`}
                   >

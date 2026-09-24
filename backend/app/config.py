@@ -28,6 +28,19 @@ class Settings(BaseSettings):
     smtp_password: str = Field(default="", alias="SMTP_PASSWORD")
     otp_expire_minutes: int = Field(default=10, alias="OTP_EXPIRE_MINUTES")
 
+    # WhatsApp Cloud API. Empty values make every send a logged no-op, so the
+    # app is safe to deploy before the templates are approved.
+    whatsapp_token: str = Field(default="", alias="META_API_KEY")
+    whatsapp_phone_number_id: str = Field(default="", alias="WHATSAPP_PHONE_NUMBER_ID")
+    whatsapp_internal_number: str = Field(default="", alias="WHATSAPP_INTERNAL_NUMBER")
+    whatsapp_api_version: str = Field(default="v23.0", alias="WHATSAPP_API_VERSION")
+    whatsapp_template_lang: str = Field(default="en", alias="WHATSAPP_TEMPLATE_LANG")
+    wa_tpl_room_guest: str = Field(default="", alias="WA_TPL_ROOM_GUEST")
+    wa_tpl_room_staff: str = Field(default="", alias="WA_TPL_ROOM_STAFF")
+    wa_tpl_table_guest: str = Field(default="", alias="WA_TPL_TABLE_GUEST")
+    wa_tpl_table_staff: str = Field(default="", alias="WA_TPL_TABLE_STAFF")
+    wa_tpl_contact_staff: str = Field(default="", alias="WA_TPL_CONTACT_STAFF")
+
     environment: str = Field(default="development", alias="ENVIRONMENT")
     debug: bool = Field(default=False, alias="DEBUG")
     frontend_url: str = Field(default="http://localhost:3000", alias="FRONTEND_URL")

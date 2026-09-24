@@ -12,6 +12,7 @@ from app.auth.routes import router as auth_router
 from app.auth.service import load_jwks
 from app.routes.rooms import router as rooms_router
 from app.routes.bookings import router as bookings_router
+from app.routes.forms import router as forms_router
 from app.routes.payments import router as payments_router
 from app.routes.admin_bookings import router as admin_bookings_router
 from app.routes.menu import admin_router as admin_menu_router
@@ -65,6 +66,7 @@ app.include_router(payments_router)
 app.include_router(admin_bookings_router)
 app.include_router(menu_router)
 app.include_router(admin_menu_router)
+app.include_router(forms_router)
 
 
 @app.get("/")

@@ -8,6 +8,8 @@ import Footer from '@/components/Footer';
 import CountryCodeDropdown from '@/components/ui/CountryCodeDropdown';
 import { trackAdsConversion, splitName } from '@/lib/ads-conversions';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+
 const ContactPage = () => {
   const [formData, setFormData] = useState({
     name: '',
@@ -26,12 +28,18 @@ const ContactPage = () => {
     setMessage('');
 
     try {
-      // Log contact data for FastAPI integration
-      console.log('Contact Form Data for FastAPI:', formData);
-      
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      const response = await fetch(`${API_URL}/contact`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: phoneNumber ? formData.phone : null,
+          message: formData.message,
+        }),
+      });
+      if (!response.ok) throw new Error(`Contact submit failed: ${response.status}`);
+
       // Google Ads enhanced conversion — contact form lead
       {
         const { firstName, lastName } = splitName(formData.name);

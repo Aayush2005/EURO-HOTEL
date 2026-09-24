@@ -15,6 +15,7 @@ from fastapi import HTTPException
 from app.config import settings
 from app.email import send_booking_confirmed_email
 from app.services.hdfc_service import HDFCService
+from app.whatsapp import fire, notify_room_booking
 
 TERMINAL_PAYMENT_STATUSES = {"success", "failed", "expired"}
 
@@ -103,7 +104,7 @@ class PaymentEngine:
     async def _send_confirmation_if_success(self, connection: Connection, booking_id: int) -> None:
         row = await connection.fetchrow(
             """
-            SELECT guest_name, guest_email, booking_reference,
+            SELECT guest_name, guest_email, guest_phone, booking_reference,
                    check_in::text, check_out::text, total_amount, total_guests, special_requests
             FROM hotel.bookings WHERE id = $1
             """,
@@ -111,16 +112,25 @@ class PaymentEngine:
         )
         if not row:
             return
-        import asyncio
-        asyncio.create_task(send_booking_confirmed_email(
+        amount = f"{int(row['total_amount']):,}"
+        fire(send_booking_confirmed_email(
             to_email=row["guest_email"],
             guest_name=row["guest_name"],
             booking_reference=row["booking_reference"],
             check_in=row["check_in"],
             check_out=row["check_out"],
-            total_amount=f"{int(row['total_amount']):,}",
+            total_amount=amount,
             total_guests=row["total_guests"],
             special_requests=row["special_requests"],
+        ))
+        fire(notify_room_booking(
+            guest_phone=row["guest_phone"],
+            guest_name=row["guest_name"],
+            booking_reference=row["booking_reference"],
+            check_in=row["check_in"],
+            check_out=row["check_out"],
+            total_guests=row["total_guests"],
+            total_amount=amount,
         ))
 
     async def _apply_status(self, connection: Connection, order_id: str, status: str, gateway_response: dict) -> None:
@@ -182,21 +192,25 @@ class PaymentEngine:
                 raise HTTPException(status_code=404, detail="Order not found")
 
             is_terminal = status in TERMINAL_PAYMENT_STATUSES
-            should_send_confirmation = status == "success"
 
-            await connection.execute(
+            booking_row = await connection.fetchrow(
                 """
                 UPDATE hotel.bookings
                 SET booking_status = $2,
                     updated_at = $3,
                     hold_expires_at = CASE WHEN $4 THEN NULL ELSE hold_expires_at END
                 WHERE id = $1 AND booking_status IN ('pending', 'payment_failed')
+                RETURNING id
                 """,
                 payment_row["booking_id"],
                 booking_status,
                 now,
                 is_terminal,
             )
+            # Only notify on the actual pending -> confirmed transition. The status
+            # endpoint re-runs this on every poll (frontend polls every 5s), and a
+            # repeat send means duplicate emails and duplicate paid WhatsApp templates.
+            should_send_confirmation = status == "success" and booking_row is not None
 
         if should_send_confirmation:
             await self._send_confirmation_if_success(connection, payment_row["booking_id"])

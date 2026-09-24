@@ -11,6 +11,7 @@ from app.auth.dependencies import require_roles
 from app.config import settings
 from app.db import get_db
 from app.email import send_cancellation_approved_email
+from app.whatsapp import fire
 from app.schemas.booking import AssignRoomRequest, ManualBookingRequest, ReassignRoomRequest
 from app.services.allocation_engine import AllocationEngine
 from app.services.booking_engine import BookingEngine
@@ -144,8 +145,7 @@ async def approve_cancellation(
         booking_id, now,
     )
 
-    import asyncio
-    asyncio.create_task(send_cancellation_approved_email(
+    fire(send_cancellation_approved_email(
         to_email=row["guest_email"],
         guest_name=row["guest_name"],
         booking_reference=row["booking_reference"],
